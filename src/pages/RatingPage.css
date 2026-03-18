@@ -1,0 +1,139 @@
+.rating-page {
+    padding-bottom: 3rem;
+}
+
+.rating-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .rating-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.leaderboard h2,
+.teacher-rating h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.empty-text {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 2rem;
+}
+
+.board-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.board-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    border-radius: var(--radius-sm);
+    transition: background 0.2s;
+}
+
+.board-row:not(:last-child) {
+    border-bottom: 1px solid var(--border-light);
+}
+
+.board-row.me {
+    background: var(--accent-light);
+}
+
+.rank {
+    width: 40px;
+    text-align: center;
+}
+
+.medal {
+    font-size: 1.5rem;
+}
+
+.rank-num {
+    font-weight: 700;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.board-info {
+    flex: 1;
+}
+
+.board-info strong {
+    display: block;
+    font-size: 0.95rem;
+}
+
+.board-info span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.board-score {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--radius-sm);
+}
+
+.avg-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.big-star {
+    font-size: 2rem;
+}
+
+.avg-num {
+    font-size: 2.5rem;
+    font-weight: 900;
+}
+
+.avg-count {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.stars-row {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+.star-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+
+.star-btn:hover {
+    transform: scale(1.2);
+}
+
+.star-btn.active {
+    color: #f59e0b;
+}
+
+.rate-hint {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
