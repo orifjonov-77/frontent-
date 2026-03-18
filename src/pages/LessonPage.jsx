@@ -108,6 +108,21 @@ export default function LessonPage() {
 
     if (loading) return <div className="page-loader"><div className="spinner" /></div>;
 
+    // YouTube URL ni embed formatga o'zgartirish (fallback for legacy data)
+    const normalizeVideoUrl = (url) => {
+        if (!url) return null;
+        // youtu.be/VIDEO_ID
+        let match = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+        if (match) return `https://www.youtube.com/embed/${match[1]}`;
+        // youtube.com/watch?v=VIDEO_ID
+        match = url.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/);
+        if (match) return `https://www.youtube.com/embed/${match[1]}`;
+        // already embed format or other URL
+        return url;
+    };
+
+    const videoUrl = normalizeVideoUrl(progress?.video_url);
+
     return (
         <div className="lesson-page container animate-fade">
             <Link to={-1} className="back-link"><ArrowLeft size={16} /> Orqaga</Link>
@@ -140,11 +155,12 @@ export default function LessonPage() {
             <div className="tab-content card">
                 {activeTab === 'video' && (
                     <div className="video-section">
-                        {progress?.video_url ? (
+                        <h2 className="lesson-title" style={{ marginBottom: '1rem', fontSize: '1.3rem' }}>{progress?.title}</h2>
+                        {videoUrl ? (
                             <div className="video-wrapper">
                                 <iframe
-                                    src={progress.video_url}
-                                    title="Video dars"
+                                    src={videoUrl}
+                                    title={progress?.title || "Video dars"}
                                     frameBorder="0"
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
@@ -158,9 +174,9 @@ export default function LessonPage() {
                             </div>
                         )}
                         {progress?.description && (
-                            <div className="video-description">
-                                <h3>📝 Dars haqida</h3>
-                                <p>{progress.description}</p>
+                            <div className="video-description" style={{ marginTop: '1.2rem', padding: '1rem', borderRadius: '12px', background: 'var(--card-bg, rgba(255,255,255,0.05))', border: '1px solid var(--border, rgba(255,255,255,0.1))' }}>
+                                <h3 style={{ marginBottom: '0.5rem' }}>📝 Dars haqida</h3>
+                                <p style={{ lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{progress.description}</p>
                             </div>
                         )}
                         {!progress?.video_watched ? (

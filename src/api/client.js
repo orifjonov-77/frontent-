@@ -7,18 +7,50 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// In-memory GET cache (30 sekund)
+const apiCache = new Map();
+const CACHE_TTL = 30000; // 30 seconds
+
 // Auto-attach token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Check cache for GET requests
+  if (config.method === 'get') {
+    const cacheKey = config.url + JSON.stringify(config.params || {});
+    const cached = apiCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      config.adapter = () => Promise.resolve({
+        data: cached.data,
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config,
+      });
+    }
+  }
   return config;
 });
 
-// Handle 401 errors
+// Handle responses — cache GET, handle 401
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Cache successful GET responses
+    if (response.config.method === 'get' && response.status === 200) {
+      const cacheKey = response.config.url + JSON.stringify(response.config.params || {});
+      apiCache.set(cacheKey, { data: response.data, timestamp: Date.now() });
+      // Periodically clean expired entries
+      if (apiCache.size > 100) {
+        const now = Date.now();
+        for (const [key, val] of apiCache) {
+          if (now - val.timestamp > CACHE_TTL) apiCache.delete(key);
+        }
+      }
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
@@ -28,6 +60,9 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Cache tozalash funksiyasi (mutation operatsiyalardan keyin chaqirish uchun)
+export const clearApiCache = () => apiCache.clear();
 
 // Auth
 export const authAPI = {

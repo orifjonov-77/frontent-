@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { adminAPI, coursesAPI } from '../api/client';
+import { adminAPI, coursesAPI, clearApiCache } from '../api/client';
 import {
     LayoutDashboard, Users, BookOpen, FileText, CreditCard, Gamepad2, Award,
     Plus, Trash2, Check, X, Eye, Loader, Send, Edit3, ChevronDown, ChevronRight,
@@ -245,6 +245,7 @@ export default function AdminPage() {
             }
             showMsg('Muvaffaqiyatli!');
             setFormData({});
+            clearApiCache(); // Keshni tozalash
             loadTab();
             loadSelectData();
             if (selCourse) loadLessonsForCourse(selCourse);
