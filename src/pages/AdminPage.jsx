@@ -11,6 +11,22 @@ import {
 import { chatAPI } from '../api/client';
 import './AdminPage.css';
 
+// IMPORTANT: Modal TASHQARIDA e'lon qilingan — har safar qaytadan yaratilmaydi
+function Modal({ open, title, children, onClose }) {
+    if (!open) return null;
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-box" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h3>{title}</h3>
+                    <button className="modal-close" onClick={onClose}><X size={18} /></button>
+                </div>
+                <div className="modal-body">{children}</div>
+            </div>
+        </div>
+    );
+}
+
 export default function AdminPage() {
     const { user, isAdmin } = useAuth();
     const navigate = useNavigate();
@@ -74,7 +90,6 @@ export default function AdminPage() {
         if (selModule) {
             adminAPI.getCoursesSelect(selModule).then(r => setCourses(r.data)).catch(() => { });
         } else { setCourses([]); }
-        setSelCourse(''); setSelLesson(''); setLessons([]);
     }, [selModule]);
 
     useEffect(() => {
@@ -82,7 +97,6 @@ export default function AdminPage() {
             adminAPI.getLessonsSelect(selCourse).then(r => setLessons(r.data)).catch(() => { });
             loadLessonsForCourse(selCourse);
         } else { setLessons([]); }
-        setSelLesson('');
     }, [selCourse]);
 
     const loadSelectData = async () => {
@@ -258,9 +272,7 @@ export default function AdminPage() {
         { id: 'students', icon: <Users size={16} />, label: "O'quvchilar" },
         { id: 'payments', icon: <CreditCard size={16} />, label: "To'lovlar" },
         { id: 'content', icon: <BookOpen size={16} />, label: 'Kontent' },
-        { id: 'chat', icon: <MessageCircle size={16} />, label: 'Chat' },
         { id: 'homework', icon: <FileText size={16} />, label: 'Vazifalar' },
-        { id: 'certificates', icon: <Award size={16} />, label: 'Sertifikat' },
     ];
 
     const contentTabs = [
@@ -269,18 +281,17 @@ export default function AdminPage() {
         { id: 'lessons', icon: <PlayCircle size={14} />, label: 'Darslar' },
         { id: 'tests', icon: <FileText size={14} />, label: 'Testlar' },
         { id: 'homeworkTab', icon: <BookOpen size={14} />, label: 'Vazifalar' },
-        { id: 'games', icon: <Gamepad2 size={14} />, label: "O'yinlar" },
     ];
 
-    // Cascading Selects component
-    const CascadingSelect = ({ showLesson = false }) => (
+    // Cascading Selects — inline JSX (agar component qilsak, har safar qaytadan yaratiladi)
+    const renderCascadingSelects = (showLesson = false) => (
         <div className="cascading-selects">
-            <select className="input" value={selModule} onChange={e => setSelModule(e.target.value)}>
+            <select className="input" value={selModule} onChange={e => { setSelModule(e.target.value); setSelCourse(''); setSelLesson(''); }}>
                 <option value="">📦 Modul tanlang</option>
                 {modules.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
             {selModule && (
-                <select className="input" value={selCourse} onChange={e => setSelCourse(e.target.value)}>
+                <select className="input" value={selCourse} onChange={e => { setSelCourse(e.target.value); setSelLesson(''); }}>
                     <option value="">📚 Kurs tanlang</option>
                     {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
@@ -289,28 +300,13 @@ export default function AdminPage() {
                 <select className="input" value={selLesson} onChange={e => setSelLesson(e.target.value)}>
                     <option value="">📖 Dars tanlang</option>
                     {lessons.map(l => <option key={l.id} value={l.id}>
-                        #{l.order} — {l.title} {l.has_test ? '✅' : ''} {l.has_homework ? '📝' : ''} {l.has_game ? '🎮' : ''}
+                        #{l.order} — {l.title} {l.course_name ? `(${l.course_name})` : ''} {l.has_test ? '✅' : ''} {l.has_homework ? '📝' : ''} {l.has_game ? '🎮' : ''}
                     </option>)}
                 </select>
             )}
         </div>
     );
 
-    // Modal component
-    const Modal = ({ open, title, children }) => {
-        if (!open) return null;
-        return (
-            <div className="modal-overlay" onClick={closeModal}>
-                <div className="modal-box" onClick={e => e.stopPropagation()}>
-                    <div className="modal-header">
-                        <h3>{title}</h3>
-                        <button className="modal-close" onClick={closeModal}><X size={18} /></button>
-                    </div>
-                    <div className="modal-body">{children}</div>
-                </div>
-            </div>
-        );
-    };
 
     return (
         <div className="admin-page container animate-fade">
@@ -627,7 +623,7 @@ export default function AdminPage() {
                                             <h3><PlayCircle size={16} /> Darslar</h3>
                                             <button className="btn btn-primary btn-sm" onClick={() => openModal('lesson')}><Plus size={14} /> Dars</button>
                                         </div>
-                                        <CascadingSelect />
+                                        {renderCascadingSelects()}
                                         {selCourse && (
                                             <>
                                                 <div className="list-header">
@@ -685,7 +681,7 @@ export default function AdminPage() {
                                             <button className="btn btn-primary btn-sm" onClick={() => openModal('test')}><Plus size={14} /> Test qo'shish</button>
                                         </div>
                                         <p className="form-hint">⚠️ Avval Modul → Kurs → Dars tanlang, keyin "Test qo'shish" tugmasini bosing</p>
-                                        <CascadingSelect showLesson />
+                                        {renderCascadingSelects(true)}
                                         {selLesson && (() => {
                                             const les = lessons.find(l => l.id === parseInt(selLesson));
                                             return (
@@ -710,7 +706,22 @@ export default function AdminPage() {
                                             <button className="btn btn-primary btn-sm" onClick={() => openModal('homework')}><Plus size={14} /> Vazifa qo'shish</button>
                                         </div>
                                         <p className="form-hint">Avval Modul → Kurs → Dars tanlang</p>
-                                        <CascadingSelect showLesson />
+                                        {renderCascadingSelects(true)}
+                                        {selLesson && (() => {
+                                            const les = lessons.find(l => l.id === parseInt(selLesson));
+                                            return les?.has_homework ? (
+                                                <div className="attachments-status card">
+                                                    <h4>✅ Bu darsda vazifa bor</h4>
+                                                    <div className="action-btns" style={{ marginTop: '0.5rem' }}>
+                                                        <button className="btn btn-sm btn-danger" onClick={() => handleAction('deleteHomework', selLesson)}><Trash2 size={14} /> Vazifani o'chirish</button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="attachments-status card">
+                                                    <h4>❌ Bu darsda vazifa yo'q — yuqoridagi tugma bilan qo'shing</h4>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 )}
 
@@ -722,7 +733,22 @@ export default function AdminPage() {
                                             <button className="btn btn-primary btn-sm" onClick={() => openModal('game')}><Plus size={14} /> O'yin qo'shish</button>
                                         </div>
                                         <p className="form-hint">Avval Modul → Kurs → Dars tanlang</p>
-                                        <CascadingSelect showLesson />
+                                        {renderCascadingSelects(true)}
+                                        {selLesson && (() => {
+                                            const les = lessons.find(l => l.id === parseInt(selLesson));
+                                            return les?.has_game ? (
+                                                <div className="attachments-status card">
+                                                    <h4>✅ Bu darsda o'yin bor</h4>
+                                                    <div className="action-btns" style={{ marginTop: '0.5rem' }}>
+                                                        <button className="btn btn-sm btn-danger" onClick={() => handleAction('deleteGame', selLesson)}><Trash2 size={14} /> O'yinni o'chirish</button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="attachments-status card">
+                                                    <h4>❌ Bu darsda o'yin yo'q — yuqoridagi tugma bilan qo'shing</h4>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 )}
                             </div>
@@ -734,7 +760,7 @@ export default function AdminPage() {
             {/* ============ MODALS ============ */}
 
             {/* Module Modal */}
-            <Modal open={modalOpen && modalType === 'module'} title="Yangi Modul">
+            <Modal open={modalOpen && modalType === 'module'} title="Yangi Modul" onClose={closeModal}>
                 <div className="modal-form">
                     <div className="form-group"><label>Modul nomi</label><input className="input" placeholder="masalan: Dasturlash" value={formData.name || ''} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} /></div>
                     <div className="form-group"><label>Slug</label><input className="input" placeholder="masalan: dasturlash" value={formData.slug || ''} onChange={e => setFormData(p => ({ ...p, slug: e.target.value }))} /></div>
@@ -753,9 +779,9 @@ export default function AdminPage() {
             </Modal>
 
             {/* Course Modal */}
-            <Modal open={modalOpen && modalType === 'course'} title="Yangi Kurs">
+            <Modal open={modalOpen && modalType === 'course'} title="Yangi Kurs" onClose={closeModal}>
                 <div className="modal-form">
-                    <CascadingSelect />
+                    {renderCascadingSelects()}
                     {selModule && <>
                         <div className="form-group"><label>Kurs nomi</label><input className="input" placeholder="masalan: Frontend" value={formData.name || ''} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} /></div>
                         <div className="form-group"><label>Slug</label><input className="input" placeholder="masalan: frontend" value={formData.slug || ''} onChange={e => setFormData(p => ({ ...p, slug: e.target.value }))} /></div>
@@ -771,9 +797,9 @@ export default function AdminPage() {
             </Modal>
 
             {/* Lesson Modal */}
-            <Modal open={modalOpen && modalType === 'lesson'} title="Yangi Dars">
+            <Modal open={modalOpen && modalType === 'lesson'} title="Yangi Dars" onClose={closeModal}>
                 <div className="modal-form">
-                    <CascadingSelect />
+                    {renderCascadingSelects()}
                     {selCourse && <>
                         <div className="form-group"><label>Dars sarlavhasi</label><input className="input" placeholder="masalan: HTML kirish" value={formData.title || ''} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} /></div>
                         <div className="form-group"><label>Slug</label><input className="input" placeholder="masalan: html-kirish" value={formData.slug || ''} onChange={e => setFormData(p => ({ ...p, slug: e.target.value }))} /></div>
@@ -797,7 +823,7 @@ export default function AdminPage() {
             </Modal>
 
             {/* Test Modal — with individual question fields like teacher project */}
-            <Modal open={modalOpen && modalType === 'test'} title="Yangi Test">
+            <Modal open={modalOpen && modalType === 'test'} title="Yangi Test" onClose={closeModal}>
                 <div className="modal-form">
                     {!selLesson && <p className="form-hint" style={{ color: 'var(--danger)' }}>⚠️ Avval Content → Testlar tabida Modul → Kurs → Dars tanlang</p>}
                     {selLesson && <>
@@ -853,7 +879,7 @@ export default function AdminPage() {
             </Modal>
 
             {/* Homework Modal */}
-            <Modal open={modalOpen && modalType === 'homework'} title="Yangi Vazifa">
+            <Modal open={modalOpen && modalType === 'homework'} title="Yangi Vazifa" onClose={closeModal}>
                 <div className="modal-form">
                     {!selLesson && <p className="form-hint" style={{ color: 'var(--danger)' }}>⚠️ Avval Content → Vazifalar tabida Modul → Kurs → Dars tanlang</p>}
                     {selLesson && <>
@@ -871,7 +897,7 @@ export default function AdminPage() {
             </Modal>
 
             {/* Game Modal */}
-            <Modal open={modalOpen && modalType === 'game'} title="Yangi O'yin">
+            <Modal open={modalOpen && modalType === 'game'} title="Yangi O'yin" onClose={closeModal}>
                 <div className="modal-form">
                     {!selLesson && <p className="form-hint" style={{ color: 'var(--danger)' }}>⚠️ Avval Content → O'yinlar tabida Modul → Kurs → Dars tanlang</p>}
                     {selLesson && <>
@@ -889,7 +915,7 @@ export default function AdminPage() {
             </Modal>
 
             {/* Certificate Modal */}
-            <Modal open={modalOpen && modalType === 'cert'} title="Sertifikat yuborish">
+            <Modal open={modalOpen && modalType === 'cert'} title="Sertifikat yuborish" onClose={closeModal}>
                 <div className="modal-form">
                     <div className="form-group">
                         <label>O'quvchi tanlang</label>

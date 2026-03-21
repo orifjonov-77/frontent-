@@ -1,6 +1,7 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import rasm from "../assets/mylogo.png"
 import { Sun, Moon, LogOut, User, Shield, Home, BookOpen, Trophy, Menu, X, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 import './Layout.css';
@@ -21,7 +22,7 @@ export default function Layout() {
       <nav className="navbar">
         <div className="container nav-inner">
           <Link to="/" className="nav-logo" onClick={() => setMenuOpen(false)}>
-            <img src="../src/assets/mylogo.png" alt="MDev" style={{ width: 32, height: 32, borderRadius: '50%' }} />
+            <img src={rasm} alt="MDev" style={{ width: 32, height: 32, borderRadius: '50%' }} />
             <span className="logo-text">MDev</span>
           </Link>
 
