@@ -1,85 +1,77 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import rasm from "../assets/mylogo.png"
-import { Sun, Moon, LogOut, User, Shield, Home, BookOpen, Trophy, Menu, X, BarChart3 } from 'lucide-react';
-import { useState } from 'react';
+import { Home, BookOpen, Trophy, User, Shield, Sun, Moon, Menu, X, LogOut, FileText } from 'lucide-react';
 import './Layout.css';
 
 export default function Layout() {
   const { user, logout, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const isActive = (path) => location.pathname === path ? 'active' : '';
+
+  const navItems = [
+    { path: '/', icon: <Home size={18} />, label: 'Bosh sahifa' },
+    { path: '/modules', icon: <BookOpen size={18} />, label: 'Modullar' },
+    { path: '/rating', icon: <Trophy size={18} />, label: 'Reyting' },
+    { path: '/terms', icon: <FileText size={18} />, label: 'Qoidalar' },
+  ];
 
   return (
-    <div className="layout">
-      <nav className="navbar">
-        <div className="container nav-inner">
-          <Link to="/" className="nav-logo" onClick={() => setMenuOpen(false)}>
-            <img src={rasm} alt="MDev" style={{ width: 32, height: 32, borderRadius: '50%' }} />
-            <span className="logo-text">MDev</span>
-          </Link>
-
-          <button className="mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+    <>
+      <nav className="nav">
+        <div className="nav-inner">
+          <Link to="/" className="nav-logo">MDev Academy</Link>
 
           <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
-            <Link to="/" className="nav-link" onClick={() => setMenuOpen(false)}>
-              <Home size={16} /> Bosh sahifa
-            </Link>
-            <Link to="/modules" className="nav-link" onClick={() => setMenuOpen(false)}>
-              <BookOpen size={16} /> Modullar
-            </Link>
-            <Link to="/rating" className="nav-link" onClick={() => setMenuOpen(false)}>
-              <Trophy size={16} /> Reyting
-            </Link>
-
-            {user ? (
-              <>
-                {isAdmin && (
-                  <Link to="/admin" className="nav-link nav-admin" onClick={() => setMenuOpen(false)}>
-                    <Shield size={16} /> Admin
-                  </Link>
-                )}
-                <Link to="/results" className="nav-link" onClick={() => setMenuOpen(false)}>
-                  <BarChart3 size={16} /> Natijalar
-                </Link>
-                <Link to="/profile" className="nav-link" onClick={() => setMenuOpen(false)}>
-                  <User size={16} /> {user.full_name?.split(' ')[0]}
-                </Link>
-                <button className="nav-link nav-logout" onClick={() => { handleLogout(); setMenuOpen(false); }}>
-                  <LogOut size={16} /> Chiqish
-                </button>
-              </>
-            ) : (
-              <Link to="/login" className="btn btn-primary btn-sm" onClick={() => setMenuOpen(false)}>
-                Kirish
+            {navItems.map(item => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`nav-link ${isActive(item.path)}`}
+                onClick={() => setMenuOpen(false)}
+              >
+                {item.icon} {item.label}
+              </Link>
+            ))}
+            {user && (
+              <Link to="/profile" className={`nav-link ${isActive('/profile')}`} onClick={() => setMenuOpen(false)}>
+                <User size={18} /> Profil
               </Link>
             )}
+            {isAdmin && (
+              <Link to="/admin" className={`nav-link ${isActive('/admin')}`} onClick={() => setMenuOpen(false)}>
+                <Shield size={18} /> Admin
+              </Link>
+            )}
+          </div>
 
-            <button className="theme-toggle" onClick={toggleTheme} title="Tema o'zgartirish">
+          <div className="nav-actions">
+            <button className="theme-toggle" onClick={toggleTheme} title="Rejim almashtirish">
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            {user && (
+              <button className="btn-icon" onClick={logout} title="Chiqish">
+                <LogOut size={18} />
+              </button>
+            )}
+
+            <button className="nav-mobile-toggle" onClick={() => setMenuOpen(!menuOpen)}>
+              {menuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
         </div>
       </nav>
 
-      <main className="main-content">
-        <Outlet />
-      </main>
-
-      <footer className="footer">
+      <main className="page">
         <div className="container">
-          <p>© 2026 MDev Online Teaching Platform. Barcha huquqlar himoyalangan.</p>
+          <Outlet />
         </div>
-      </footer>
-    </div>
+      </main>
+    </>
   );
 }

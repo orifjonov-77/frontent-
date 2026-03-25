@@ -1,163 +1,141 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { chatAPI } from '../api/client';
-import { MessageCircle, Send, X, Loader, Bot, Sparkles } from 'lucide-react';
+import { MessageCircle, X, Send, Loader, Bot, User } from 'lucide-react';
 import './ChatWidget.css';
+
+const QUICK_QUESTIONS = [
+    "Kurslar narxi qancha?",
+    "To'lov qanday qilinadi?",
+    "Dars ochilmayapti",
+];
 
 export default function ChatWidget() {
     const { user } = useAuth();
-    const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState([]);
+    const [open, setOpen] = useState(false);
+    const [msgs, setMsgs] = useState([]);
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
     const [unread, setUnread] = useState(0);
-    const messagesEndRef = useRef(null);
-    const refreshRef = useRef(null);
+    const [loadingMsgs, setLoadingMsgs] = useState(false);
+    const endRef = useRef(null);
 
     useEffect(() => {
         if (!user) return;
-        loadUnread();
-        const interval = setInterval(loadUnread, 15000);
-        return () => clearInterval(interval);
+        const fetchUnread = async () => {
+            try {
+                const res = await chatAPI.getUnread();
+                setUnread(res.data.unread_count || 0);
+            } catch { }
+        };
+        fetchUnread();
+        const iv = setInterval(fetchUnread, 30000);
+        return () => clearInterval(iv);
     }, [user]);
 
     useEffect(() => {
-        if (isOpen && user) {
-            loadMessages();
-            // Auto-refresh har 5 sekundda chat ochiq bo'lganda
-            refreshRef.current = setInterval(loadMessages, 5000);
-        } else {
-            if (refreshRef.current) clearInterval(refreshRef.current);
-        }
-        return () => {
-            if (refreshRef.current) clearInterval(refreshRef.current);
-        };
-    }, [isOpen]);
+        if (!open || !user) return;
+        loadMessages();
+        const iv = setInterval(loadMessages, 10000);
+        return () => clearInterval(iv);
+    }, [open, user]);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
-    const loadUnread = async () => {
-        try {
-            const res = await chatAPI.getUnread();
-            setUnread(res.data.unread);
-        } catch { }
-    };
+        endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [msgs]);
 
     const loadMessages = async () => {
+        setLoadingMsgs(true);
         try {
             const res = await chatAPI.getMy();
-            setMessages(res.data);
+            setMsgs(res.data || []);
             setUnread(0);
         } catch { }
+        setLoadingMsgs(false);
     };
 
-    const handleSend = async () => {
-        if (!text.trim()) return;
+    const handleSend = async (message) => {
+        const msg = message || text.trim();
+        if (!msg) return;
+        setText('');
         setSending(true);
+
+        // Optimistic UI
+        setMsgs(prev => [...prev, { sender_type: 'student', message: msg, created_at: new Date().toISOString() }]);
+
         try {
-            await chatAPI.send({ message: text.trim() });
-            setText('');
-            // Kichik delay - AI javob kelishini kutish
-            setTimeout(loadMessages, 1500);
-        } catch { }
+            await chatAPI.send({ message: msg });
+            // Reload after delay for AI response
+            setTimeout(loadMessages, 2000);
+        } catch {
+            setMsgs(prev => [...prev, { sender_type: 'system', message: 'Xabar yuborilmadi. Qaytadan urinib ko\'ring.' }]);
+        }
         setSending(false);
     };
 
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    };
-
-    const getSenderInfo = (msg) => {
-        if (msg.is_mine) return null;
-        // sender_id 0 = AI bot
-        if (msg.sender_id === 0) {
-            return { name: '🤖 AI Yordamchi', isBot: true };
-        }
-        return { name: '👨‍💼 Admin', isBot: false };
-    };
-
-    if (!user) return null;
+    if (!user) return <div style={{ display: 'none' }} />;
 
     return (
         <>
-            {/* Floating button */}
-            <button className={`chat-fab ${unread > 0 ? 'has-unread' : ''}`} onClick={() => setIsOpen(!isOpen)}>
-                {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
-                {unread > 0 && !isOpen && <span className="unread-badge">{unread}</span>}
+            {/* Chat button */}
+            <button className="chat-fab" onClick={() => setOpen(!open)}>
+                {open ? <X size={24} /> : <MessageCircle size={24} />}
+                {unread > 0 && !open && <span className="chat-badge">{unread}</span>}
             </button>
 
-            {/* Chat panel */}
-            {isOpen && (
-                <div className="chat-panel">
+            {/* Chat window */}
+            {open && (
+                <div className="chat-window">
                     <div className="chat-header">
-                        <div className="chat-header-left">
-                            <Sparkles size={18} />
-                            <div>
-                                <span className="chat-title">Yordam chat</span>
-                                <span className="chat-subtitle">AI va Admin javob beradi</span>
-                            </div>
+                        <Bot size={20} />
+                        <div>
+                            <h4>MDev Yordamchi</h4>
+                            <span>AI + Admin</span>
                         </div>
-                        <button onClick={() => setIsOpen(false)} className="chat-close"><X size={18} /></button>
                     </div>
 
                     <div className="chat-messages">
-                        {messages.length === 0 ? (
+                        {loadingMsgs && msgs.length === 0 && (
+                            <div className="chat-loading"><Loader size={20} className="spin" /></div>
+                        )}
+
+                        {msgs.length === 0 && !loadingMsgs && (
                             <div className="chat-empty">
-                                <div className="chat-empty-icon">
-                                    <Bot size={36} />
-                                </div>
-                                <h4>Assalomu alaykum! 👋</h4>
-                                <p>Savolingiz bormi? Bu yerga yozing!</p>
-                                <div className="quick-questions">
-                                    {['Narxlar qancha?', 'Karta raqami?', 'Sertifikat olish'].map((q, i) => (
-                                        <button key={i} className="quick-q" onClick={() => { setText(q); }}>
-                                            {q}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        ) : (
-                            messages.map(m => {
-                                const sender = getSenderInfo(m);
-                                return (
-                                    <div key={m.id} className={`chat-msg ${m.is_mine ? 'mine' : 'theirs'} ${sender?.isBot ? 'bot' : ''}`}>
-                                        <div className="msg-bubble">
-                                            {sender && (
-                                                <span className={`msg-sender ${sender.isBot ? 'bot-label' : 'admin-label'}`}>
-                                                    {sender.name}
-                                                </span>
-                                            )}
-                                            <p>{m.message}</p>
-                                            <span className="msg-time">
-                                                {new Date(m.created_at).toLocaleTimeString('uz', { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                        {sending && (
-                            <div className="chat-msg theirs bot">
-                                <div className="msg-bubble typing-bubble">
-                                    <span className="msg-sender bot-label">🤖 AI Yordamchi</span>
-                                    <div className="typing-indicator">
-                                        <span></span><span></span><span></span>
-                                    </div>
-                                </div>
+                                <Bot size={32} />
+                                <p>Salom! 👋</p>
+                                <p>Savolingiz bormi? Yozing!</p>
                             </div>
                         )}
-                        <div ref={messagesEndRef} />
+
+                        {msgs.map((m, i) => (
+                            <div key={i} className={`chat-msg ${m.sender_type === 'student' ? 'mine' : 'other'}`}>
+                                <div className="msg-icon">
+                                    {m.sender_type === 'student' ? <User size={14} /> : <Bot size={14} />}
+                                </div>
+                                <div className="msg-bubble">{m.message}</div>
+                            </div>
+                        ))}
+                        <div ref={endRef} />
                     </div>
 
-                    <div className="chat-input-wrapper">
-                        <textarea className="chat-input" rows={1} placeholder="Xabar yozing..."
-                            value={text} onChange={e => setText(e.target.value)} onKeyDown={handleKeyDown} />
-                        <button className="chat-send-btn" onClick={handleSend} disabled={sending || !text.trim()}>
+                    {/* Quick questions */}
+                    {msgs.length === 0 && (
+                        <div className="chat-quick">
+                            {QUICK_QUESTIONS.map((q, i) => (
+                                <button key={i} className="quick-btn" onClick={() => handleSend(q)}>{q}</button>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="chat-input-row">
+                        <input
+                            className="chat-input"
+                            placeholder="Xabar yozing..."
+                            value={text}
+                            onChange={e => setText(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleSend()}
+                        />
+                        <button className="chat-send" onClick={() => handleSend()} disabled={sending || !text.trim()}>
                             {sending ? <Loader size={18} className="spin" /> : <Send size={18} />}
                         </button>
                     </div>

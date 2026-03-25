@@ -9,7 +9,7 @@ const api = axios.create({
 
 // In-memory GET cache (30 sekund)
 const apiCache = new Map();
-const CACHE_TTL = 30000; // 30 seconds
+const CACHE_TTL = 30000;
 
 // Auto-attach token
 api.interceptors.request.use((config) => {
@@ -17,7 +17,6 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  // Check cache for GET requests
   if (config.method === 'get') {
     const cacheKey = config.url + JSON.stringify(config.params || {});
     const cached = apiCache.get(cacheKey);
@@ -34,14 +33,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle responses — cache GET, handle 401
+// Handle responses
 api.interceptors.response.use(
   (response) => {
-    // Cache successful GET responses
     if (response.config.method === 'get' && response.status === 200) {
       const cacheKey = response.config.url + JSON.stringify(response.config.params || {});
       apiCache.set(cacheKey, { data: response.data, timestamp: Date.now() });
-      // Periodically clean expired entries
       if (apiCache.size > 100) {
         const now = Date.now();
         for (const [key, val] of apiCache) {
@@ -61,7 +58,6 @@ api.interceptors.response.use(
   }
 );
 
-// Cache tozalash funksiyasi (mutation operatsiyalardan keyin chaqirish uchun)
 export const clearApiCache = () => apiCache.clear();
 
 // Auth
@@ -92,20 +88,35 @@ export const testsAPI = {
   getForLesson: (lessonId) => api.get(`/tests/lesson/${lessonId}`),
   start: (testId) => api.post(`/tests/${testId}/start`),
   submit: (testId, answers) => api.post(`/tests/${testId}/submit`, { answers }),
+  forceSubmit: (testId, answers) => api.post(`/tests/${testId}/force-submit`, { answers }),
   getResult: (testId) => api.get(`/tests/${testId}/result`),
-};
-
-// Games
-export const gamesAPI = {
-  getForLesson: (lessonId) => api.get(`/games/lesson/${lessonId}`),
-  start: (gameId) => api.post(`/games/${gameId}/start`),
-  submit: (gameId, data) => api.post(`/games/${gameId}/submit`, data),
 };
 
 // Homework
 export const homeworkAPI = {
   getForLesson: (lessonId) => api.get(`/homework/lesson/${lessonId}`),
-  submit: (hwId, data) => api.post(`/homework/${hwId}/submit`, data),
+  submit: (hwId, data) => {
+    // Support FormData for file upload
+    if (data instanceof FormData) {
+      return api.post(`/homework/${hwId}/submit`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    }
+    // Legacy: JSON body (convert to FormData)
+    const fd = new FormData();
+    if (data.answer_text) fd.append('answer_text', data.answer_text);
+    if (data.file_url) fd.append('file_url', data.file_url);
+    return api.post(`/homework/${hwId}/submit`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  uploadFile: (hwId, file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api.post(`/homework/${hwId}/upload`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   getStatus: (hwId) => api.get(`/homework/${hwId}/status`),
 };
 
@@ -136,53 +147,40 @@ export const ratingAPI = {
 // Admin
 export const adminAPI = {
   dashboard: () => api.get('/admin/dashboard'),
-  // Students
   getStudents: () => api.get('/admin/students'),
   getStudent: (id) => api.get(`/admin/students/${id}`),
   updateStudent: (id, data) => api.patch(`/admin/students/${id}`, data),
   deleteStudent: (id) => api.delete(`/admin/students/${id}`),
-  // Select dropdowns
   getModulesSelect: () => api.get('/admin/select/modules'),
   getCoursesSelect: (moduleId) => api.get('/admin/select/courses', { params: moduleId ? { module_id: moduleId } : {} }),
   getLessonsSelect: (courseId) => api.get('/admin/select/lessons', { params: courseId ? { course_id: courseId } : {} }),
   getStudentsSelect: () => api.get('/admin/select/students'),
-  // Modules CRUD
   createModule: (data) => api.post('/admin/modules', data),
   updateModule: (id, data) => api.put(`/admin/modules/${id}`, data),
   deleteModule: (id) => api.delete(`/admin/modules/${id}`),
-  // Courses CRUD
   createCourse: (data) => api.post('/admin/courses', data),
   updateCourse: (id, data) => api.put(`/admin/courses/${id}`, data),
   deleteCourse: (id) => api.delete(`/admin/courses/${id}`),
-  // Lessons CRUD
   getLessons: (courseId) => api.get('/admin/lessons', { params: courseId ? { course_id: courseId } : {} }),
   createLesson: (data) => api.post('/admin/lessons', data),
   updateLesson: (id, data) => api.put(`/admin/lessons/${id}`, data),
   deleteLesson: (id) => api.delete(`/admin/lessons/${id}`),
-  // Tests CRUD
   createTest: (data) => api.post('/admin/tests', data),
   getTest: (id) => api.get(`/admin/tests/${id}`),
   deleteTest: (id) => api.delete(`/admin/tests/${id}`),
-  // Homework CRUD
   createHomework: (data) => api.post('/admin/homework', data),
   deleteHomework: (id) => api.delete(`/admin/homework/${id}`),
   getHomeworkSubmissions: () => api.get('/admin/homework/submissions'),
   gradeHomework: (id, data) => api.patch(`/admin/homework/submissions/${id}/grade`, data),
-  // Games CRUD
-  createGame: (data) => api.post('/admin/games', data),
-  deleteGame: (id) => api.delete(`/admin/games/${id}`),
-  // Exams CRUD
   createExam: (data) => api.post('/admin/exams', data),
   deleteExam: (id) => api.delete(`/admin/exams/${id}`),
-  // Payments
   getPayments: (status) => api.get('/admin/payments', { params: status ? { status } : {} }),
   reviewPayment: (id, data) => api.patch(`/admin/payments/${id}/review`, data),
-  // Grant
   grantCourse: (userId, courseId) => api.post(`/admin/grant-course?user_id=${userId}&course_id=${courseId}`),
-  // Certificates
   getCertificates: () => api.get('/admin/certificates'),
   sendCertificate: (userId, title, fileUrl, description) => api.post(`/admin/certificates?user_id=${userId}&title=${encodeURIComponent(title)}&file_url=${encodeURIComponent(fileUrl)}&description=${encodeURIComponent(description || '')}`),
   deleteCertificate: (id) => api.delete(`/admin/certificates/${id}`),
+  updateTest: (id, data) => api.put(`/admin/tests/${id}`, data),
 };
 
 // Chat
@@ -190,7 +188,6 @@ export const chatAPI = {
   send: (data) => api.post('/chat/send', data),
   getMy: () => api.get('/chat/my'),
   getUnread: () => api.get('/chat/unread-count'),
-  // Admin
   getConversations: () => api.get('/chat/admin/conversations'),
   getStudentMessages: (studentId) => api.get(`/chat/admin/messages/${studentId}`),
   adminReply: (studentId, data) => api.post(`/chat/admin/reply/${studentId}`, data),
@@ -201,9 +198,15 @@ export const resultsAPI = {
   getMy: () => api.get('/results/my'),
 };
 
-export default api;
+// Rating bonus
+export const bonusAPI = {
+  getWeekly: () => api.get('/rating/weekly-bonus'),
+  useBonus: (lessonId) => api.post('/rating/use-bonus', { lesson_id: lessonId }),
+};
 
 // Student Certificates
 export const certificatesAPI = {
   getMy: () => api.get('/certificates/my'),
 };
+
+export default api;

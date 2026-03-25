@@ -1,0 +1,119 @@
+/* ====== TERMS PAGE ====== */
+.terms-page {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.terms-hero {
+    text-align: center;
+    padding: 2rem 1rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--gradient-subtle);
+}
+
+.terms-hero-bg {
+    position: absolute;
+    inset: 0;
+    background: var(--gradient);
+    opacity: 0.05;
+}
+
+.terms-hero h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.terms-hero p {
+    color: var(--text-secondary);
+    position: relative;
+    z-index: 1;
+}
+
+.terms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.terms-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    transition: var(--transition);
+}
+
+.terms-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.terms-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.terms-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+}
+
+.terms-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.terms-card li {
+    padding: 0.35rem 0;
+    padding-left: 1.25rem;
+    position: relative;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.terms-card li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.terms-card li strong {
+    color: var(--text);
+}
+
+.terms-footer {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.terms-footer p {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .terms-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .terms-hero h1 {
+        font-size: 1.5rem;
+    }
+}

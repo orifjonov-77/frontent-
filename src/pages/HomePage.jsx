@@ -7,9 +7,9 @@ export default function HomePage() {
   const { user } = useAuth();
 
   const modules = [
-    { icon: <Monitor size={32} />, title: "Kompyuter savodxonligi", desc: "Word, Excel, PowerPoint, Canva", price: "80,000", color: "#10b981" },
-    { icon: <Code size={32} />, title: "Dasturlash", desc: "HTML, CSS, JS, React, Python, FastAPI", price: "100,000", color: "#6c5ce7" },
-    { icon: <Scissors size={32} />, title: "Montaj", desc: "CapCut, Premiere Pro, video montaj", price: "80,000", color: "#f59e0b" },
+    { icon: <Monitor size={32} />, title: "Kompyuter savodxonligi", desc: "Word, Excel, PowerPoint, Canva", price: "100,000", color: "#10b981" },
+    { icon: <Code size={32} />, title: "Dasturlash", desc: "HTML, CSS, JS, React, Python, FastAPI", price: "130,000", color: "#6c5ce7" },
+    { icon: <Scissors size={32} />, title: "Montaj", desc: "CapCut, Premiere Pro, video montaj", price: "90,000", color: "#f59e0b" },
   ];
 
   return (
@@ -94,7 +94,7 @@ export default function HomePage() {
           <div className="features-grid stagger-children">
             {[
               { icon: "📹", title: "Video darslar", desc: "Professional sifatli video darslar" },
-              { icon: "📝", title: "Testlar", desc: "Har darsda 10 ta test savol (5 daqiqa)" },
+              { icon: "📝", title: "Testlar", desc: "Har darsda 10 ta test savol (7 daqiqa)" },
               { icon: "🎮", title: "O'yin misollari", desc: "Interaktiv mashq va misollar" },
               { icon: "📋", title: "Vazifalar", desc: "Amaliy topshiriqlar va uy vazifalari" },
               { icon: "🏆", title: "Reyting", desc: "O'quvchilar o'rtasida raqobat" },

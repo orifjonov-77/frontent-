@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [botLink, setBotLink] = useState('');
   const [isNew, setIsNew] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -53,7 +54,7 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-card card animate-fade">
         <div className="login-header">
-          <img src="../src/assets/mylogo.png" alt="MDev" className="login-logo" onError={(e) => { e.target.style.display = 'none'; }} />
+          {!logoError && <img src="../src/assets/mylogo.png" alt="MDev" className="login-logo" onError={() => setLogoError(true)} />}
           <h1>MDev Platform</h1>
           <p>Online ta'lim platformasi</p>
         </div>
