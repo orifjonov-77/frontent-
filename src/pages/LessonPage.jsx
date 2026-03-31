@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { coursesAPI, testsAPI, homeworkAPI } from '../api/client';
+import { coursesAPI, testsAPI, homeworkAPI, clearApiCache } from '../api/client';
 import { useModal } from '../components/Modal';
 import { Play, CheckCircle, Clock, FileText, BookOpen, ArrowLeft, AlertCircle, Send, Loader, Upload, Lock, X, File as FileIcon } from 'lucide-react';
 import './LessonPage.css';
@@ -115,26 +115,51 @@ export default function LessonPage() {
 
     const loadLesson = async () => {
         try {
-            const progRes = await coursesAPI.getProgress(lessonId);
-            setProgress(progRes.data);
-            try {
-                const t = await testsAPI.getForLesson(lessonId);
-                setTest(t.data);
-                testRef.current = t.data;
-            } catch { }
-            try {
-                const h = await homeworkAPI.getForLesson(lessonId);
-                setHomework(h.data);
-                if (h.data) {
-                    try { const s = await homeworkAPI.getStatus(h.data.id); setHwStatus(s.data); } catch { }
-                }
-            } catch { }
-            if (progRes.data.test_passed) {
-                try {
-                    const tRes = await testsAPI.getForLesson(lessonId);
-                    if (tRes.data?.id) {
-                        const r = await testsAPI.getResult(tRes.data.id);
+            clearApiCache(); // Always fetch fresh data
+            // Parallel API calls for speed
+            const [progRes, testRes, hwRes] = await Promise.allSettled([
+                coursesAPI.getProgress(lessonId),
+                testsAPI.getForLesson(lessonId),
+                homeworkAPI.getForLesson(lessonId),
+            ]);
+
+            // Progress
+            if (progRes.status === 'fulfilled') {
+                const prog = progRes.value.data;
+                setProgress(prog);
+
+                // If test passed, load result
+                if (prog.test_passed && testRes.status === 'fulfilled' && testRes.value.data?.id) {
+                    try {
+                        const r = await testsAPI.getResult(testRes.value.data.id);
                         setTestResult(r.data);
+                    } catch { }
+                }
+            }
+
+            // Test
+            if (testRes.status === 'fulfilled' && testRes.value.data) {
+                setTest(testRes.value.data);
+                testRef.current = testRes.value.data;
+            }
+
+            // Homework
+            if (hwRes.status === 'fulfilled' && hwRes.value.data) {
+                setHomework(hwRes.value.data);
+                try {
+                    const s = await homeworkAPI.getStatus(hwRes.value.data.id);
+                    setHwStatus(s.data);
+                } catch { }
+            } else if (progRes.status === 'fulfilled' && progRes.value.data?.has_homework) {
+                // Progress says homework exists but homework API failed — retry once
+                try {
+                    const hwRetry = await homeworkAPI.getForLesson(lessonId);
+                    if (hwRetry.data) {
+                        setHomework(hwRetry.data);
+                        try {
+                            const s = await homeworkAPI.getStatus(hwRetry.data.id);
+                            setHwStatus(s.data);
+                        } catch { }
                     }
                 } catch { }
             }
@@ -360,11 +385,9 @@ export default function LessonPage() {
                         <FileText size={16} /> Test {progress?.test_passed && <CheckCircle size={12} />}
                     </button>
                 )}
-                {homework && (
-                    <button className={`tab ${activeTab === 'homework' ? 'active' : ''} ${hwStatus?.is_graded ? 'completed' : ''}`} onClick={() => setActiveTab('homework')}>
-                        <BookOpen size={16} /> Vazifa {hwStatus?.is_graded && <CheckCircle size={12} />}
-                    </button>
-                )}
+                <button className={`tab ${activeTab === 'homework' ? 'active' : ''} ${hwStatus?.is_graded ? 'completed' : ''}`} onClick={() => setActiveTab('homework')}>
+                    <BookOpen size={16} /> Vazifa {hwStatus?.is_graded && <CheckCircle size={12} />}
+                </button>
             </div>
 
             {/* Tab Content */}
@@ -449,10 +472,17 @@ export default function LessonPage() {
                     </div>
                 )}
 
-                {activeTab === 'homework' && homework && (
+                {activeTab === 'homework' && (
                     <div className="homework-section">
-                        <h3>{homework.title}</h3>
-                        {homework.description && <p className="hw-desc">{homework.description}</p>}
+                        <h3>{homework?.title || 'Uyga vazifa'}</h3>
+                        {homework?.description && <p className="hw-desc">{homework.description}</p>}
+
+                        {!homework && (
+                            <div className="hw-info-banner" style={{ marginBottom: '1rem' }}>
+                                <Loader size={16} className="spin" />
+                                <span>Vazifa yuklanmoqda...</span>
+                            </div>
+                        )}
 
                         <div className="hw-info-banner">
                             <AlertCircle size={16} />
@@ -491,7 +521,7 @@ export default function LessonPage() {
                                     </div>
                                 )}
                             </div>
-                        ) : (
+                        ) : homework ? (
                             <div className="hw-form">
                                 <div className="form-group">
                                     <label>Javob matni</label>
@@ -545,7 +575,7 @@ export default function LessonPage() {
                                     </p>
                                 )}
                             </div>
-                        )}
+                        ) : null}
                     </div>
                 )}
             </div>

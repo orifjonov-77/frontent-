@@ -117,7 +117,7 @@ export const homeworkAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  getStatus: (hwId) => api.get(`/homework/${hwId}/status`),
+  getStatus: (hwId) => api.get(`/homework/${hwId}/status`, { params: { _t: Date.now() } }),
 };
 
 // Exams
@@ -181,15 +181,16 @@ export const adminAPI = {
   sendCertificate: (userId, title, fileUrl, description) => api.post(`/admin/certificates?user_id=${userId}&title=${encodeURIComponent(title)}&file_url=${encodeURIComponent(fileUrl)}&description=${encodeURIComponent(description || '')}`),
   deleteCertificate: (id) => api.delete(`/admin/certificates/${id}`),
   updateTest: (id, data) => api.put(`/admin/tests/${id}`, data),
+  deleteTestByLesson: (lessonId) => api.delete(`/admin/tests/by-lesson/${lessonId}`),
 };
 
-// Chat
+// Chat (no cache — must always show fresh messages)
 export const chatAPI = {
   send: (data) => api.post('/chat/send', data),
-  getMy: () => api.get('/chat/my'),
-  getUnread: () => api.get('/chat/unread-count'),
-  getConversations: () => api.get('/chat/admin/conversations'),
-  getStudentMessages: (studentId) => api.get(`/chat/admin/messages/${studentId}`),
+  getMy: () => api.get('/chat/my', { params: { _t: Date.now() } }),
+  getUnread: () => api.get('/chat/unread-count', { params: { _t: Date.now() } }),
+  getConversations: () => api.get('/chat/admin/conversations', { params: { _t: Date.now() } }),
+  getStudentMessages: (studentId) => api.get(`/chat/admin/messages/${studentId}`, { params: { _t: Date.now() } }),
   adminReply: (studentId, data) => api.post(`/chat/admin/reply/${studentId}`, data),
 };
 

@@ -79,6 +79,13 @@ export default function AdminPage() {
     const [existingCourses, setExistingCourses] = useState([]);
     const [existingLessons, setExistingLessons] = useState([]);
 
+    // Student detail modal
+    const [studentDetail, setStudentDetail] = useState(null);
+    const [studentDetailLoading, setStudentDetailLoading] = useState(false);
+
+    // Existing test for editing
+    const [existingTest, setExistingTest] = useState(null);
+
     useEffect(() => {
         if (!isAdmin) { navigate('/'); return; }
         loadTab();
@@ -154,7 +161,7 @@ export default function AdminPage() {
         setChatLoading(true);
         setSelectedChat(studentId);
         try {
-            const res = await chatAPI.getMessages(studentId);
+            const res = await chatAPI.getStudentMessages(studentId);
             setChatMessages(res.data);
         } catch (err) { console.error(err); }
         setChatLoading(false);
@@ -165,7 +172,7 @@ export default function AdminPage() {
         try {
             await chatAPI.adminReply(selectedChat, { message: chatReply });
             setChatReply('');
-            const res = await chatAPI.getMessages(selectedChat);
+            const res = await chatAPI.getStudentMessages(selectedChat);
             setChatMessages(res.data);
             await loadConversations();
         } catch (err) { showMsg('Xabar yuborilmadi', true); }
@@ -176,11 +183,48 @@ export default function AdminPage() {
         setTimeout(() => setMsg(''), 4000);
     };
 
+    const loadStudentDetail = async (studentId) => {
+        setStudentDetailLoading(true);
+        try {
+            const res = await adminAPI.getStudent(studentId);
+            setStudentDetail(res.data);
+        } catch (err) { showMsg('Talaba ma\'lumotlari yuklanmadi', true); }
+        setStudentDetailLoading(false);
+    };
+
+    const loadTestForLesson = async (lessonId) => {
+        try {
+            const les = lessons.find(l => l.id === parseInt(lessonId));
+            if (les?.has_test) {
+                // We need to find the test for this lesson
+                const res = await adminAPI.getLessons(selCourse);
+                const lesData = res.data.find(l => l.id === parseInt(lessonId));
+                if (lesData) {
+                    // Try fetching existing test
+                    try {
+                        // Search for test by iterating tests endpoint - admin has test get by id
+                        // But we need to use the lesson's test - let's try getTest via course lessons
+                    } catch { }
+                }
+            }
+            setExistingTest(null);
+        } catch { setExistingTest(null); }
+    };
+
     // Open modal
     const openModal = (type) => {
         setModalType(type);
         setFormData({});
-        setTestQuestions([{ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_option: 'a', order: 1 }]);
+        // Always start with exactly 10 questions for tests
+        if (type === 'test') {
+            const qs = [];
+            for (let i = 0; i < 10; i++) {
+                qs.push({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_option: 'a', order: i + 1 });
+            }
+            setTestQuestions(qs);
+        } else {
+            setTestQuestions([]);
+        }
         setModalOpen(true);
     };
 
@@ -229,16 +273,23 @@ export default function AdminPage() {
                 case 'updateLesson': await adminAPI.updateLesson(args[0], editData); setEditingId(null); break;
                 case 'deleteLesson': if (confirm("Darsni o'chirasizmi?")) await adminAPI.deleteLesson(args[0]); break;
                 case 'createTest': {
-                    const validQs = testQuestions.filter(q => q.question.trim());
+                    // Validate exactly 10 questions
+                    const validQs = testQuestions.filter(q => q.question.trim() && q.option_a.trim() && q.option_b.trim() && q.option_c.trim() && q.option_d.trim());
+                    if (validQs.length !== 10) {
+                        showMsg(`Aynan 10 ta to'liq savol kerak! Hozir ${validQs.length} ta to'ldirilgan`, true);
+                        setSubmitting(false);
+                        return;
+                    }
                     await adminAPI.createTest({
                         lesson_id: parseInt(selLesson),
                         title: formData.title || 'Test',
-                        time_limit: parseInt(formData.time_limit) || 300,
+                        time_limit: parseInt(formData.time_limit) || 420,
                         passing_score: parseInt(formData.passing_score) || 7,
                         questions: validQs
                     });
                     closeModal(); break;
                 }
+                case 'deleteTestByLesson': await adminAPI.deleteTestByLesson(args[0]); if (selCourse) { adminAPI.getLessonsSelect(selCourse).then(r => setLessons(r.data)).catch(() => { }); } break;
                 case 'deleteTest': if (confirm("Testni o'chirasizmi?")) await adminAPI.deleteTest(args[0]); break;
                 case 'createHomework': await adminAPI.createHomework({
                     lesson_id: parseInt(selLesson),
@@ -361,6 +412,9 @@ export default function AdminPage() {
                                                 <td className="td-sm">{s.created_at?.slice(0, 10)}</td>
                                                 <td>
                                                     <div className="action-btns">
+                                                        <button className="btn btn-sm btn-info" onClick={() => loadStudentDetail(s.id)}>
+                                                            <Eye size={14} /> Batafsil
+                                                        </button>
                                                         <button className="btn btn-sm btn-secondary" onClick={() => handleAction('toggleStudent', s.id, !s.is_active)}>
                                                             {s.is_active ? 'Bloklash' : 'Ochish'}
                                                         </button>
@@ -429,14 +483,21 @@ export default function AdminPage() {
                                         <h3><MessageCircle size={18} /> Suhbatlar ({conversations.length})</h3>
                                         {conversations.length === 0 && <p className="empty-text">Hali xabar yo'q</p>}
                                         {conversations.map(c => (
-                                            <div key={c.student_id} className="conv-card card" onClick={() => openChat(c.student_id)}>
-                                                <div className="conv-info">
+                                            <div key={c.student_id} className="conv-card card">
+                                                <div className="conv-info" onClick={() => openChat(c.student_id)} style={{cursor:'pointer',flex:1}}>
                                                     <strong>{c.student_name}</strong>
                                                     <small>{c.student_phone}</small>
                                                     <p className="conv-last">{c.last_message}</p>
                                                 </div>
                                                 <div className="conv-meta">
                                                     {c.unread > 0 && <span className="unread-dot">{c.unread}</span>}
+                                                    {c.telegram_link && (
+                                                        <a href={c.telegram_link} target="_blank" rel="noopener noreferrer"
+                                                           className="btn btn-sm btn-primary" style={{fontSize:'0.7rem',padding:'0.3rem 0.6rem'}}
+                                                           onClick={e => e.stopPropagation()}>
+                                                            📱 Telegram
+                                                        </a>
+                                                    )}
                                                     <small>{c.last_time?.slice(0, 10)}</small>
                                                 </div>
                                             </div>
@@ -450,10 +511,22 @@ export default function AdminPage() {
                                             </button>
                                             <span className="chat-detail-name">
                                                 {conversations.find(c => c.student_id === selectedChat)?.student_name}
+                                                <small style={{marginLeft:'0.5rem',color:'var(--text-muted)',fontWeight:400}}>
+                                                    {conversations.find(c => c.student_id === selectedChat)?.student_phone}
+                                                </small>
                                             </span>
-                                            <button className="btn btn-sm btn-secondary" onClick={() => openChat(selectedChat)}>
-                                                <RefreshCw size={14} />
-                                            </button>
+                                            <div style={{display:'flex',gap:'0.35rem'}}>
+                                                {conversations.find(c => c.student_id === selectedChat)?.telegram_link && (
+                                                    <a href={conversations.find(c => c.student_id === selectedChat)?.telegram_link}
+                                                       target="_blank" rel="noopener noreferrer"
+                                                       className="btn btn-sm btn-primary" style={{fontSize:'0.75rem'}}>
+                                                        📱 TG
+                                                    </a>
+                                                )}
+                                                <button className="btn btn-sm btn-secondary" onClick={() => openChat(selectedChat)}>
+                                                    <RefreshCw size={14} />
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="chat-detail-messages">
                                             {chatLoading && <div className="page-loader"><div className="spinner" /></div>}
@@ -484,28 +557,44 @@ export default function AdminPage() {
                         {tab === 'homework' && (
                             <div className="table-wrap">
                                 <table className="admin-table">
-                                    <thead><tr><th>O'quvchi</th><th>Vazifa</th><th>Javob</th><th>Baho</th><th>Amal</th></tr></thead>
+                                    <thead><tr><th>O'quvchi</th><th>Vazifa</th><th>Javob</th><th>Fayl</th><th>Sana</th><th>Baho</th><th>Amal</th></tr></thead>
                                     <tbody>
                                         {Array.isArray(data) && data.map(s => (
                                             <tr key={s.id}>
                                                 <td><strong>{s.user_name}</strong></td>
                                                 <td>{s.homework_title}</td>
-                                                <td className="td-text">{s.answer_text?.slice(0, 100)}</td>
-                                                <td>{s.is_graded ? <span className="badge badge-success">{s.score}/10</span> : <span className="badge badge-warning">—</span>}</td>
+                                                <td className="td-text">{s.answer_text ? s.answer_text.slice(0, 150) : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
                                                 <td>
-                                                    {!s.is_graded && (
+                                                    {s.file_url ? (
+                                                        <a href={`${import.meta.env.VITE_API_URL}${s.file_url}`} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
+                                                            <Eye size={14} /> Fayl
+                                                        </a>
+                                                    ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                                                </td>
+                                                <td className="td-sm">{s.submitted_at?.slice(0, 16).replace('T', ' ')}</td>
+                                                <td>{s.is_graded ? <span className="badge badge-success">{s.score}/2</span> : <span className="badge badge-warning">Kutilmoqda</span>}</td>
+                                                <td>
+                                                    {!s.is_graded ? (
                                                         <div className="grade-form">
-                                                            <select id={`score-${s.id}`} className="input" style={{ width: '60px' }}>
-                                                                {[...Array(11)].map((_, i) => <option key={i} value={i}>{i}</option>)}
+                                                            <select id={`score-${s.id}`} className="input" style={{ width: '55px' }}>
+                                                                <option value="0">0</option>
+                                                                <option value="1">1</option>
+                                                                <option value="2">2</option>
                                                             </select>
+                                                            <input id={`comment-${s.id}`} className="input" placeholder="Izoh..." style={{ width: '120px' }} />
                                                             <button className="btn btn-sm btn-primary" onClick={() =>
-                                                                handleAction('gradeHomework', s.id, document.getElementById(`score-${s.id}`).value, '')
-                                                            }>Baho</button>
+                                                                handleAction('gradeHomework', s.id, document.getElementById(`score-${s.id}`).value, document.getElementById(`comment-${s.id}`).value || '')
+                                                            }>✅ Baho</button>
                                                         </div>
+                                                    ) : (
+                                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{s.admin_comment || '✅ Baholangan'}</span>
                                                     )}
                                                 </td>
                                             </tr>
                                         ))}
+                                        {Array.isArray(data) && data.length === 0 && (
+                                            <tr><td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Hali topshirilgan vazifalar yo'q</td></tr>
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -692,6 +781,16 @@ export default function AdminPage() {
                                                         <span className={`badge ${les?.has_homework ? 'badge-success' : 'badge-danger'}`}>{les?.has_homework ? '✅ Vazifa bor' : '❌ Vazifa yo\'q'}</span>
                                                         <span className={`badge ${les?.has_game ? 'badge-success' : 'badge-danger'}`}>{les?.has_game ? '✅ O\'yin bor' : '❌ O\'yin yo\'q'}</span>
                                                     </div>
+                                                    {les?.has_test && (
+                                                        <div className="action-btns" style={{ marginTop: '0.75rem' }}>
+                                                            <button className="btn btn-sm btn-danger" onClick={() => {
+                                                                if (confirm("Testni o'chirasizmi?")) {
+                                                                    // Find the test ID — we have lesson_id, need to find test
+                                                                    handleAction('deleteTestByLesson', parseInt(selLesson));
+                                                                }
+                                                            }}><Trash2 size={14} /> Testni o'chirish</button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })()}
@@ -829,21 +928,19 @@ export default function AdminPage() {
                     {selLesson && <>
                         <div className="form-row">
                             <div className="form-group"><label>Test sarlavhasi</label><input className="input" value={formData.title || ''} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} /></div>
-                            <div className="form-group"><label>Vaqt (soniya)</label><input className="input" type="number" placeholder="300" value={formData.time_limit || ''} onChange={e => setFormData(p => ({ ...p, time_limit: e.target.value }))} /></div>
-                            <div className="form-group"><label>O'tish bali</label><input className="input" type="number" placeholder="7" value={formData.passing_score || ''} onChange={e => setFormData(p => ({ ...p, passing_score: e.target.value }))} /></div>
+                            <div className="form-group"><label>Vaqt, soniya (ixtiyoriy, default: 420)</label><input className="input" type="number" placeholder="420" value={formData.time_limit || ''} onChange={e => setFormData(p => ({ ...p, time_limit: e.target.value }))} /></div>
+                            <div className="form-group"><label>O'tish bali (ixtiyoriy, default: 7)</label><input className="input" type="number" placeholder="7" value={formData.passing_score || ''} onChange={e => setFormData(p => ({ ...p, passing_score: e.target.value }))} /></div>
                         </div>
 
                         <div className="questions-section">
                             <div className="section-header">
-                                <h4>📝 Savollar ({testQuestions.length})</h4>
-                                <button className="btn btn-sm btn-secondary" onClick={addQuestion}><Plus size={14} /> Savol</button>
+                                <h4>📝 Savollar ({testQuestions.length}/10) — aynan 10 ta bo'lishi shart</h4>
                             </div>
 
                             {testQuestions.map((q, i) => (
                                 <div key={i} className="question-card card">
                                     <div className="question-header">
                                         <span className="q-number">{i + 1}</span>
-                                        <button className="btn btn-sm btn-danger" onClick={() => removeQuestion(i)} style={{ marginLeft: 'auto' }}><Trash2 size={12} /></button>
                                     </div>
                                     <div className="form-group">
                                         <label>Savol matni</label>
@@ -870,8 +967,8 @@ export default function AdminPage() {
 
                         <div className="modal-actions">
                             <button className="btn btn-secondary" onClick={closeModal}>Bekor</button>
-                            <button className="btn btn-primary" onClick={() => handleAction('createTest')} disabled={submitting}>
-                                {submitting ? <Loader size={16} className="spin" /> : <><Check size={16} /> {testQuestions.length} ta savol bilan saqlash</>}
+                            <button className="btn btn-primary" onClick={() => handleAction('createTest')} disabled={submitting || testQuestions.filter(q => q.question.trim()).length !== 10}>
+                                {submitting ? <Loader size={16} className="spin" /> : <span><Check size={16} /> 10 ta savol bilan saqlash</span>}
                             </button>
                         </div>
                     </>}
@@ -950,6 +1047,108 @@ export default function AdminPage() {
                     </div>
                 </div>
             )}
+
+            {/* Student Detail Modal */}
+            <Modal open={!!studentDetail} title={`👤 ${studentDetail?.full_name || 'Talaba'}`} onClose={() => setStudentDetail(null)}>
+                {studentDetailLoading ? (
+                    <div className="page-loader"><div className="spinner" /></div>
+                ) : studentDetail ? (
+                    <div className="student-detail-content">
+                        {/* Basic Info */}
+                        <div className="detail-section">
+                            <h4>📋 Asosiy ma'lumotlar</h4>
+                            <div className="detail-grid">
+                                <div className="detail-item"><span>Ism:</span><strong>{studentDetail.full_name}</strong></div>
+                                <div className="detail-item"><span>Telefon:</span><strong>{studentDetail.phone}</strong></div>
+                                <div className="detail-item"><span>Status:</span><span className={`badge ${studentDetail.is_active ? 'badge-success' : 'badge-danger'}`}>{studentDetail.is_active ? 'Aktiv' : 'Bloklangan'}</span></div>
+                                <div className="detail-item"><span>Ro'yxatdan o'tgan:</span><strong>{studentDetail.created_at?.slice(0, 10)}</strong></div>
+                                {studentDetail.telegram_link && (
+                                    <div className="detail-item"><span>Telegram:</span><a href={studentDetail.telegram_link} target="_blank" rel="noopener" className="btn btn-sm btn-info">💬 Telegram <ExternalLink size={10} /></a></div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Payments */}
+                        <div className="detail-section">
+                            <h4>💰 To'lovlar ({studentDetail.payments?.length || 0})</h4>
+                            {studentDetail.payments?.length > 0 ? (
+                                <table className="admin-table" style={{ fontSize: '0.85rem' }}>
+                                    <thead><tr><th>Modul</th><th>Summa</th><th>Status</th><th>Sana</th></tr></thead>
+                                    <tbody>
+                                        {studentDetail.payments.map(p => (
+                                            <tr key={p.id}>
+                                                <td>{p.module_id}</td>
+                                                <td>{p.amount?.toLocaleString()}</td>
+                                                <td><span className={`badge ${p.status === 'approved' ? 'badge-success' : p.status === 'pending' ? 'badge-warning' : 'badge-danger'}`}>{p.status}</span></td>
+                                                <td className="td-sm">{p.created_at?.slice(0, 10)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : <p className="empty-text">To'lovlar yo'q</p>}
+                        </div>
+
+                        {/* Test Results */}
+                        <div className="detail-section">
+                            <h4>📝 Test natijalari ({studentDetail.test_submissions?.length || 0})</h4>
+                            {studentDetail.test_submissions?.length > 0 ? (
+                                <table className="admin-table" style={{ fontSize: '0.85rem' }}>
+                                    <thead><tr><th>Test ID</th><th>Ball</th><th>Natija</th></tr></thead>
+                                    <tbody>
+                                        {studentDetail.test_submissions.map(t => (
+                                            <tr key={t.id}>
+                                                <td>#{t.test_id}</td>
+                                                <td><strong>{t.score}/{t.total}</strong></td>
+                                                <td><span className={`badge ${t.passed ? 'badge-success' : 'badge-danger'}`}>{t.passed ? '✅ O\'tdi' : '❌ O\'tmadi'}</span></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : <p className="empty-text">Test topshiriqlar yo'q</p>}
+                        </div>
+
+                        {/* Homework */}
+                        <div className="detail-section">
+                            <h4>📋 Uyga vazifalar ({studentDetail.homework_submissions?.length || 0})</h4>
+                            {studentDetail.homework_submissions?.length > 0 ? (
+                                <table className="admin-table" style={{ fontSize: '0.85rem' }}>
+                                    <thead><tr><th>Vazifa ID</th><th>Baho</th><th>Status</th></tr></thead>
+                                    <tbody>
+                                        {studentDetail.homework_submissions.map(h => (
+                                            <tr key={h.id}>
+                                                <td>#{h.homework_id}</td>
+                                                <td>{h.score !== null ? <strong>{h.score}/2</strong> : '—'}</td>
+                                                <td><span className={`badge ${h.is_graded ? 'badge-success' : 'badge-warning'}`}>{h.is_graded ? '✅ Baholangan' : '⏳ Kutilmoqda'}</span></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : <p className="empty-text">Vazifa topshiriqlar yo'q</p>}
+                        </div>
+
+                        {/* Lesson Progress */}
+                        <div className="detail-section">
+                            <h4>📊 Dars progressi ({studentDetail.lesson_progress?.length || 0})</h4>
+                            {studentDetail.lesson_progress?.length > 0 ? (
+                                <table className="admin-table" style={{ fontSize: '0.85rem' }}>
+                                    <thead><tr><th>Dars</th><th>Video</th><th>Test</th><th>Vazifa</th><th>Tugallandi</th></tr></thead>
+                                    <tbody>
+                                        {studentDetail.lesson_progress.map((lp, i) => (
+                                            <tr key={i}>
+                                                <td>#{lp.lesson_id}</td>
+                                                <td>{lp.video_watched ? '✅' : '❌'}</td>
+                                                <td>{lp.test_passed ? '✅' : '❌'}</td>
+                                                <td>{lp.homework_submitted ? '✅' : '❌'}</td>
+                                                <td><span className={`badge ${lp.is_completed ? 'badge-success' : 'badge-warning'}`}>{lp.is_completed ? '✅' : '⏳'}</span></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : <p className="empty-text">Progress yo'q</p>}
+                        </div>
+                    </div>
+                ) : null}
+            </Modal>
         </div>
     );
 }

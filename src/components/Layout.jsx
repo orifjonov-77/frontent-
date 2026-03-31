@@ -21,7 +21,7 @@ export default function Layout() {
   ];
 
   return (
-    <>
+    <div>
       <nav className="nav">
         <div className="nav-inner">
           <Link to="/" className="nav-logo">MDev Academy</Link>
@@ -37,16 +37,16 @@ export default function Layout() {
                 {item.icon} {item.label}
               </Link>
             ))}
-            {user && (
+            {user ? (
               <Link to="/profile" className={`nav-link ${isActive('/profile')}`} onClick={() => setMenuOpen(false)}>
                 <User size={18} /> Profil
               </Link>
-            )}
-            {isAdmin && (
+            ) : null}
+            {isAdmin ? (
               <Link to="/admin" className={`nav-link ${isActive('/admin')}`} onClick={() => setMenuOpen(false)}>
                 <Shield size={18} /> Admin
               </Link>
-            )}
+            ) : null}
           </div>
 
           <div className="nav-actions">
@@ -54,11 +54,11 @@ export default function Layout() {
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
-            {user && (
+            {user ? (
               <button className="btn-icon" onClick={logout} title="Chiqish">
                 <LogOut size={18} />
               </button>
-            )}
+            ) : null}
 
             <button className="nav-mobile-toggle" onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -72,6 +72,6 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
-    </>
+    </div>
   );
 }
