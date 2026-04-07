@@ -67,29 +67,365 @@
     border: 1px solid var(--danger);
 }
 
-/* Stats Grid */
-.stats-grid {
+/* ====== PREMIUM DASHBOARD STATS ====== */
+.dashboard-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Hero Stat Cards */
+.hero-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
 }
 
-.stat-card {
-    text-align: center;
-    padding: 1.5rem 1rem;
+.hero-stat-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: default;
 }
 
-.stat-label {
-    display: block;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
+.hero-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
 }
 
-.stat-value {
-    display: block;
-    font-size: 2rem;
+.hero-stat-primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+}
+
+.hero-stat-success {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: #fff;
+}
+
+.hero-stat-warning {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    color: #fff;
+}
+
+.hero-stat-info {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    color: #fff;
+}
+
+.hero-stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    flex-shrink: 0;
+}
+
+.hero-stat-content {
+    display: flex;
+    flex-direction: column;
+    z-index: 1;
+}
+
+.hero-stat-value {
+    font-size: 1.75rem;
     font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.hero-stat-label {
+    font-size: 0.78rem;
+    opacity: 0.85;
+    font-weight: 500;
+    margin-top: 0.15rem;
+}
+
+.hero-stat-decoration {
+    position: absolute;
+    right: -20px;
+    top: -20px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+}
+
+.hero-stat-decoration::after {
+    content: '';
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Month Summary */
+.month-summary-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.month-card {
+    flex: 1;
+    padding: 1.25rem 1.5rem;
+}
+
+.month-card:hover {
+    transform: none;
+}
+
+.month-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 1.25rem;
+}
+
+.month-stats-grid {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.month-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0.5rem;
+}
+
+.month-stat-num {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.02em;
+}
+
+.month-stat-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-top: 0.2rem;
+}
+
+.month-stat-divider {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+    flex-shrink: 0;
+}
+
+/* Dashboard Bottom Row */
+.dashboard-bottom-row {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 1rem;
+    animation: fadeSlideUp 0.5s ease 0.2s both;
+}
+
+/* Module Profitability */
+.module-profit-card,
+.recent-payments-card {
+    padding: 1.5rem;
+}
+
+.module-profit-card:hover,
+.recent-payments-card:hover {
+    transform: none;
+}
+
+.profit-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 1.25rem;
+}
+
+.profit-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.profit-bar-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    animation: fadeSlideUp 0.5s ease both;
+}
+
+.profit-bar-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.profit-bar-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.profit-bar-amount {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.profit-bar-track {
+    width: 100%;
+    height: 10px;
+    background: var(--bg-input);
+    border-radius: 100px;
+    overflow: hidden;
+    position: relative;
+}
+
+.profit-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: var(--gradient);
+    width: 0;
+    animation: growBar 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    position: relative;
+}
+
+.profit-bar-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmerBar 2s ease-in-out 1s infinite;
+}
+
+@keyframes growBar {
+    from {
+        width: 0;
+    }
+
+    to {
+        width: var(--target-width);
+    }
+}
+
+@keyframes shimmerBar {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.profit-bar-count {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-align: right;
+}
+
+/* Recent Payments */
+.recent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.recent-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    animation: fadeSlideUp 0.4s ease both;
+    transition: background 0.2s;
+}
+
+.recent-item:last-child {
+    border-bottom: none;
+}
+
+.recent-item:hover {
+    background: var(--bg-input);
+    border-radius: var(--radius-sm);
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.recent-item-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--gradient);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.recent-item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.recent-item-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recent-item-module {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.recent-item-amount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+.recent-amount-value {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--success);
+}
+
+.recent-amount-date {
+    font-size: 0.68rem;
+    color: var(--text-muted);
 }
 
 /* Table */
@@ -515,8 +851,12 @@
         padding-top: 1rem;
     }
 
-    .stats-grid {
-        grid-template-columns: repeat(3, 1fr);
+    .hero-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dashboard-bottom-row {
+        grid-template-columns: 1fr;
     }
 
     .form-row.four-cols {
@@ -555,21 +895,79 @@
         min-width: max-content;
     }
 
-    .stats-grid {
+    /* Dashboard Mobile */
+    .hero-stats {
         grid-template-columns: repeat(2, 1fr);
         gap: 0.5rem;
     }
 
-    .stat-card {
-        padding: 1rem 0.5rem;
+    .hero-stat-card {
+        padding: 0.85rem 1rem;
+        gap: 0.65rem;
     }
 
-    .stat-value {
-        font-size: 1.5rem;
+    .hero-stat-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
     }
 
-    .stat-label {
-        font-size: 0.7rem;
+    .hero-stat-value {
+        font-size: 1.3rem;
+    }
+
+    .hero-stat-label {
+        font-size: 0.68rem;
+    }
+
+    .hero-stat-decoration {
+        width: 70px;
+        height: 70px;
+        right: -15px;
+        top: -15px;
+    }
+
+    .month-card {
+        padding: 1rem;
+    }
+
+    .month-stats-grid {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .month-stat {
+        flex: 1 1 40%;
+        min-width: 0;
+    }
+
+    .month-stat-num {
+        font-size: 1.15rem;
+    }
+
+    .month-stat-divider {
+        display: none;
+    }
+
+    .dashboard-bottom-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .module-profit-card,
+    .recent-payments-card {
+        padding: 1rem;
+    }
+
+    .profit-header {
+        font-size: 0.88rem;
+        margin-bottom: 1rem;
+    }
+
+    .recent-item-avatar {
+        width: 34px;
+        height: 34px;
+        font-size: 0.8rem;
     }
 
     /* Tables */

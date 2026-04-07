@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { chatAPI } from '../api/client';
-import { MessageCircle, X, Send, Loader, Bot, User } from 'lucide-react';
+import { MessageCircle, X, Send, Loader, Bot, User, Sparkles } from 'lucide-react';
 import './ChatWidget.css';
 
 const QUICK_QUESTIONS = [
@@ -21,8 +21,8 @@ export default function ChatWidget() {
     const [unread, setUnread] = useState(0);
     const [typing, setTyping] = useState(false);
     const endRef = useRef(null);
+    const inputRef = useRef(null);
 
-    // Unread count — only when chat is closed
     useEffect(() => {
         if (!user || open) return;
         const fetchUnread = async () => {
@@ -32,22 +32,26 @@ export default function ChatWidget() {
             } catch { }
         };
         fetchUnread();
-        const iv = setInterval(fetchUnread, 60000); // 60s (was 30s)
+        const iv = setInterval(fetchUnread, 60000);
         return () => clearInterval(iv);
     }, [user, open]);
 
-    // Load messages when chat opens
     useEffect(() => {
         if (!open || !user) return;
         loadMessages();
-        const iv = setInterval(loadMessages, 15000); // 15s polling (was 8s)
+        const iv = setInterval(loadMessages, 15000);
         return () => clearInterval(iv);
     }, [open, user]);
 
-    // Auto-scroll
     useEffect(() => {
         endRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [msgs, typing]);
+
+    useEffect(() => {
+        if (open) {
+            setTimeout(() => inputRef.current?.focus(), 300);
+        }
+    }, [open]);
 
     const loadMessages = async () => {
         try {
@@ -72,8 +76,8 @@ export default function ChatWidget() {
         setSending(true);
         setTyping(true);
 
-        // Show user message immediately
         setMsgs(prev => [...prev, {
+            id: `tmp-${Date.now()}`,
             is_mine: true,
             is_from_admin: false,
             message: msg,
@@ -88,17 +92,18 @@ export default function ChatWidget() {
             setTimeout(() => loadMessages(), 3000);
         } catch {
             setMsgs(prev => [...prev, {
+                id: `err-${Date.now()}`,
                 is_mine: false,
                 is_from_admin: true,
                 sender_id: 0,
-                message: 'Xabar yuborilmadi. Qaytadan urinib ko\'ring.'
+                message: "Xabar yuborilmadi. Qaytadan urinib ko'ring.",
+                created_at: new Date().toISOString(),
             }]);
             setTyping(false);
         }
         setSending(false);
     };
 
-    // Close chat + clear messages
     const closeChat = () => {
         setOpen(false);
         setMsgs([]);
@@ -106,51 +111,63 @@ export default function ChatWidget() {
         setText('');
     };
 
-    const toggleChat = () => {
-        if (open) {
-            closeChat();
-        } else {
-            setOpen(true);
-        }
-    };
+    const toggleChat = () => open ? closeChat() : setOpen(true);
+
+    if (!user) return null;
 
     return (
         <div className="chat-widget-wrapper">
-            {user && (
-                <button className="chat-fab" onClick={toggleChat}>
-                    {open ? <X size={24} /> : <MessageCircle size={24} />}
-                    {unread > 0 && !open ? <span className="chat-badge">{unread}</span> : null}
-                </button>
-            )}
+            <button className="chat-fab" onClick={toggleChat} aria-label="Chat">
+                {open ? <X size={22} /> : <MessageCircle size={22} />}
+                {unread > 0 && !open && (
+                    <span className="chat-badge">{unread > 9 ? '9+' : unread}</span>
+                )}
+            </button>
 
-            {user && open ? (
-                <div className="chat-window">
+            {open && (
+                <div className="chat-window" role="dialog" aria-label="Chat oynasi">
+                    {/* Header */}
                     <div className="chat-header">
-                        <Bot size={20} />
+                        <div className="chat-header-avatar">
+                            <Bot size={18} />
+                        </div>
                         <div>
                             <h4>MDev AI Yordamchi</h4>
-                            <span>{typing ? '✍️ Yozmoqda...' : '🟢 Online'}</span>
+                            <span className="chat-status">
+                                {typing ? (
+                                    <>✍️ Yozmoqda...</>
+                                ) : (
+                                    <><span className="chat-status-dot" /> Online</>
+                                )}
+                            </span>
                         </div>
-                        <button className="chat-header-close" onClick={closeChat}><X size={16} /></button>
+                        <button className="chat-header-close" onClick={closeChat} aria-label="Yopish">
+                            <X size={15} />
+                        </button>
                     </div>
 
+                    {/* Messages */}
                     <div className="chat-messages">
-                        {msgs.length === 0 ? (
+                        {msgs.length === 0 && (
                             <div className="chat-empty">
-                                <Bot size={40} />
+                                <div className="chat-empty-icon">
+                                    <Sparkles size={24} />
+                                </div>
                                 <h4>Salom! 👋</h4>
                                 <p>Men MDev AI yordamchiman. Savollaringizga javob beraman!</p>
                             </div>
-                        ) : null}
+                        )}
 
                         {msgs.map((m, i) => (
                             <div key={m.id || i} className={`chat-msg ${m.is_mine ? 'mine' : 'other'}`}>
                                 <div className="msg-icon">
-                                    {m.is_mine ? <User size={14} /> : <Bot size={14} />}
+                                    {m.is_mine ? <User size={13} /> : <Bot size={13} />}
                                 </div>
                                 <div className="msg-content">
                                     {!m.is_mine && (
-                                        <span className="msg-sender">{m.sender_id === 0 ? '🤖 AI' : '👨‍💼 Admin'}</span>
+                                        <span className="msg-sender">
+                                            {m.sender_id === 0 ? '🤖 AI' : '👨‍💼 Admin'}
+                                        </span>
                                     )}
                                     <div className="msg-bubble">{m.message}</div>
                                     <span className="msg-time">{formatTime(m.created_at)}</span>
@@ -159,13 +176,13 @@ export default function ChatWidget() {
                         ))}
 
                         {typing && (
-                            <div className="chat-msg other bot">
-                                <div className="msg-icon"><Bot size={14} /></div>
+                            <div className="chat-msg other">
+                                <div className="msg-icon"><Bot size={13} /></div>
                                 <div className="msg-content">
                                     <div className="msg-bubble typing-bubble">
-                                        <span className="typing-dot"></span>
-                                        <span className="typing-dot"></span>
-                                        <span className="typing-dot"></span>
+                                        <span className="typing-dot" />
+                                        <span className="typing-dot" />
+                                        <span className="typing-dot" />
                                     </div>
                                 </div>
                             </div>
@@ -173,29 +190,40 @@ export default function ChatWidget() {
                         <div ref={endRef} />
                     </div>
 
-                    {msgs.length === 0 ? (
+                    {/* Quick questions */}
+                    {msgs.length === 0 && (
                         <div className="chat-quick">
                             {QUICK_QUESTIONS.map((q, i) => (
-                                <button key={i} className="quick-btn" onClick={() => handleSend(q)}>{q}</button>
+                                <button key={i} className="quick-btn" onClick={() => handleSend(q)}>
+                                    {q}
+                                </button>
                             ))}
                         </div>
-                    ) : null}
+                    )}
 
+                    {/* Input */}
                     <div className="chat-input-row">
                         <input
+                            ref={inputRef}
                             className="chat-input"
                             placeholder="Xabar yozing..."
                             value={text}
                             onChange={e => setText(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleSend()}
+                            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
                             disabled={sending}
+                            maxLength={1000}
                         />
-                        <button className="chat-send" onClick={() => handleSend()} disabled={sending || !text.trim()}>
-                            {sending ? <Loader size={18} className="spin" /> : <Send size={18} />}
+                        <button
+                            className="chat-send"
+                            onClick={() => handleSend()}
+                            disabled={sending || !text.trim()}
+                            aria-label="Yuborish"
+                        >
+                            {sending ? <Loader size={17} className="spin" /> : <Send size={17} />}
                         </button>
                     </div>
                 </div>
-            ) : null}
+            )}
         </div>
     );
 }

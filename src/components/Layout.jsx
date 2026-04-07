@@ -1,77 +1,123 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Home, BookOpen, Trophy, User, Shield, Sun, Moon, Menu, X, LogOut, FileText } from 'lucide-react';
+import {
+    Home, BookOpen, Trophy, User, Shield,
+    Sun, Moon, Menu, X, LogOut, FileText
+} from 'lucide-react';
 import './Layout.css';
 
 export default function Layout() {
-  const { user, logout, isAdmin } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
+    const { user, logout, isAdmin } = useAuth();
+    const { theme, toggleTheme } = useTheme();
+    const location = useLocation();
+    const [menuOpen, setMenuOpen] = useState(false);
 
-  const isActive = (path) => location.pathname === path ? 'active' : '';
+    // Close menu on route change
+    useEffect(() => {
+        setMenuOpen(false);
+    }, [location.pathname]);
 
-  const navItems = [
-    { path: '/', icon: <Home size={18} />, label: 'Bosh sahifa' },
-    { path: '/modules', icon: <BookOpen size={18} />, label: 'Modullar' },
-    { path: '/rating', icon: <Trophy size={18} />, label: 'Reyting' },
-    { path: '/terms', icon: <FileText size={18} />, label: 'Qoidalar' },
-  ];
+    // Close menu on outside click
+    useEffect(() => {
+        if (!menuOpen) return;
+        const handler = (e) => {
+            if (!e.target.closest('.nav-links') && !e.target.closest('.nav-mobile-toggle')) {
+                setMenuOpen(false);
+            }
+        };
+        document.addEventListener('click', handler);
+        return () => document.removeEventListener('click', handler);
+    }, [menuOpen]);
 
-  return (
-    <div>
-      <nav className="nav">
-        <div className="nav-inner">
-          <Link to="/" className="nav-logo">MDev Academy</Link>
+    const isActive = (path) => location.pathname === path ? 'active' : '';
 
-          <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
-            {navItems.map(item => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`nav-link ${isActive(item.path)}`}
-                onClick={() => setMenuOpen(false)}
-              >
-                {item.icon} {item.label}
-              </Link>
-            ))}
-            {user ? (
-              <Link to="/profile" className={`nav-link ${isActive('/profile')}`} onClick={() => setMenuOpen(false)}>
-                <User size={18} /> Profil
-              </Link>
-            ) : null}
-            {isAdmin ? (
-              <Link to="/admin" className={`nav-link ${isActive('/admin')}`} onClick={() => setMenuOpen(false)}>
-                <Shield size={18} /> Admin
-              </Link>
-            ) : null}
-          </div>
+    const navItems = [
+        { path: '/',        icon: <Home size={17} />,     label: 'Bosh sahifa' },
+        { path: '/modules', icon: <BookOpen size={17} />, label: 'Modullar' },
+        { path: '/rating',  icon: <Trophy size={17} />,   label: 'Reyting' },
+        { path: '/terms',   icon: <FileText size={17} />, label: 'Qoidalar' },
+    ];
 
-          <div className="nav-actions">
-            <button className="theme-toggle" onClick={toggleTheme} title="Rejim almashtirish">
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+    return (
+        <div>
+            <nav className="nav">
+                <div className="nav-inner">
+                    <Link to="/" className="nav-logo">
+                        MDev Academy
+                    </Link>
 
-            {user ? (
-              <button className="btn-icon" onClick={logout} title="Chiqish">
-                <LogOut size={18} />
-              </button>
-            ) : null}
+                    <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
+                        {navItems.map(item => (
+                            <Link
+                                key={item.path}
+                                to={item.path}
+                                className={`nav-link ${isActive(item.path)}`}
+                            >
+                                {item.icon}
+                                {item.label}
+                            </Link>
+                        ))}
 
-            <button className="nav-mobile-toggle" onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
-          </div>
+                        {user && (
+                            <Link
+                                to="/profile"
+                                className={`nav-link ${isActive('/profile')}`}
+                            >
+                                <User size={17} />
+                                Profil
+                            </Link>
+                        )}
+
+                        {isAdmin && (
+                            <Link
+                                to="/admin"
+                                className={`nav-link ${isActive('/admin')}`}
+                            >
+                                <Shield size={17} />
+                                Admin
+                            </Link>
+                        )}
+                    </div>
+
+                    <div className="nav-actions">
+                        <button
+                            className="theme-toggle"
+                            onClick={toggleTheme}
+                            title={theme === 'dark' ? "Kunduzgi rejim" : "Tungi rejim"}
+                            aria-label="Rejim almashtirish"
+                        >
+                            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+                        </button>
+
+                        {user && (
+                            <button
+                                className="btn-icon"
+                                onClick={logout}
+                                title="Chiqish"
+                                aria-label="Chiqish"
+                            >
+                                <LogOut size={17} />
+                            </button>
+                        )}
+
+                        <button
+                            className="nav-mobile-toggle"
+                            onClick={() => setMenuOpen(v => !v)}
+                            aria-label={menuOpen ? 'Menyuni yopish' : 'Menyuni ochish'}
+                        >
+                            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            <main className="page">
+                <div className="container">
+                    <Outlet />
+                </div>
+            </main>
         </div>
-      </nav>
-
-      <main className="page">
-        <div className="container">
-          <Outlet />
-        </div>
-      </main>
-    </div>
-  );
+    );
 }

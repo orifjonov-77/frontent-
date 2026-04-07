@@ -6,7 +6,8 @@ import {
     LayoutDashboard, Users, BookOpen, FileText, CreditCard, Gamepad2, Award,
     Plus, Trash2, Check, X, Eye, Loader, Send, Edit3, ChevronDown, ChevronRight,
     Layers, FolderOpen, PlayCircle, Save, RefreshCw, AlertCircle, Search,
-    MessageCircle, ArrowLeft, ExternalLink
+    MessageCircle, ArrowLeft, ExternalLink, TrendingUp, BarChart3, DollarSign,
+    Clock, CheckCircle, XCircle, Activity
 } from 'lucide-react';
 import { chatAPI } from '../api/client';
 import './AdminPage.css';
@@ -86,6 +87,9 @@ export default function AdminPage() {
     // Existing test for editing
     const [existingTest, setExistingTest] = useState(null);
 
+    // Payment statistics
+    const [paymentStats, setPaymentStats] = useState(null);
+
     useEffect(() => {
         if (!isAdmin) { navigate('/'); return; }
         loadTab();
@@ -128,7 +132,47 @@ export default function AdminPage() {
         setLoading(true); setMsg('');
         try {
             switch (tab) {
-                case 'dashboard': setData((await adminAPI.dashboard()).data); break;
+                case 'dashboard': {
+                    const [dashRes, payRes] = await Promise.all([
+                        adminAPI.dashboard(),
+                        adminAPI.getPayments()
+                    ]);
+                    setData(dashRes.data);
+                    // Compute payment statistics
+                    const payments = payRes.data || [];
+                    const now = new Date();
+                    const thisMonth = now.getMonth();
+                    const thisYear = now.getFullYear();
+                    const approved = payments.filter(p => p.status === 'approved' || p.status === 'auto_approved');
+                    const monthPayments = approved.filter(p => {
+                        const d = new Date(p.created_at);
+                        return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+                    });
+                    const totalRevenue = approved.reduce((s, p) => s + (p.amount || 0), 0);
+                    const monthRevenue = monthPayments.reduce((s, p) => s + (p.amount || 0), 0);
+                    // Module profitability
+                    const moduleMap = {};
+                    approved.forEach(p => {
+                        const name = p.module_name || 'Noma\'lum';
+                        if (!moduleMap[name]) moduleMap[name] = { name, revenue: 0, count: 0 };
+                        moduleMap[name].revenue += (p.amount || 0);
+                        moduleMap[name].count += 1;
+                    });
+                    const moduleStats = Object.values(moduleMap).sort((a, b) => b.revenue - a.revenue);
+                    const maxRevenue = moduleStats.length > 0 ? moduleStats[0].revenue : 1;
+                    setPaymentStats({
+                        totalPayments: approved.length,
+                        monthPayments: monthPayments.length,
+                        totalRevenue,
+                        monthRevenue,
+                        pendingCount: payments.filter(p => p.status === 'pending').length,
+                        rejectedCount: payments.filter(p => p.status === 'rejected').length,
+                        moduleStats,
+                        maxRevenue,
+                        recentPayments: approved.slice(0, 6)
+                    });
+                    break;
+                }
                 case 'students': setData((await adminAPI.getStudents()).data); break;
                 case 'payments': setData((await adminAPI.getPayments()).data); break;
                 case 'homework': setData((await adminAPI.getHomeworkSubmissions()).data); break;
@@ -380,20 +424,141 @@ export default function AdminPage() {
                     <>
                         {/* ============ DASHBOARD ============ */}
                         {tab === 'dashboard' && data && (
-                            <div className="stats-grid stagger-children">
-                                {[
-                                    { label: "O'quvchilar", value: data.total_students, color: '#6c5ce7' },
-                                    { label: 'Modullar', value: data.total_modules, color: '#10b981' },
-                                    { label: 'Kurslar', value: data.total_courses, color: '#3b82f6' },
-                                    { label: 'Darslar', value: data.total_lessons, color: '#f59e0b' },
-                                    { label: "Kutilayotgan to'lov", value: data.pending_payments, color: '#ef4444' },
-                                    { label: "Tasdiqlangan to'lov", value: data.approved_payments, color: '#10b981' },
-                                ].map((s, i) => (
-                                    <div key={i} className="stat-card card">
-                                        <span className="stat-label">{s.label}</span>
-                                        <span className="stat-value" style={{ color: s.color }}>{s.value}</span>
+                            <div className="dashboard-stats">
+                                {/* Hero Stat Cards */}
+                                <div className="hero-stats stagger-children">
+                                    <div className="hero-stat-card hero-stat-primary">
+                                        <div className="hero-stat-icon"><Users size={22} /></div>
+                                        <div className="hero-stat-content">
+                                            <span className="hero-stat-value">{data.total_students}</span>
+                                            <span className="hero-stat-label">Jami o'quvchilar</span>
+                                        </div>
+                                        <div className="hero-stat-decoration"></div>
                                     </div>
-                                ))}
+                                    <div className="hero-stat-card hero-stat-success">
+                                        <div className="hero-stat-icon"><CheckCircle size={22} /></div>
+                                        <div className="hero-stat-content">
+                                            <span className="hero-stat-value">{paymentStats?.totalPayments || data.approved_payments}</span>
+                                            <span className="hero-stat-label">Tasdiqlangan to'lovlar</span>
+                                        </div>
+                                        <div className="hero-stat-decoration"></div>
+                                    </div>
+                                    <div className="hero-stat-card hero-stat-warning">
+                                        <div className="hero-stat-icon"><Clock size={22} /></div>
+                                        <div className="hero-stat-content">
+                                            <span className="hero-stat-value">{paymentStats?.pendingCount || data.pending_payments}</span>
+                                            <span className="hero-stat-label">Kutilayotgan to'lovlar</span>
+                                        </div>
+                                        <div className="hero-stat-decoration"></div>
+                                    </div>
+                                    <div className="hero-stat-card hero-stat-info">
+                                        <div className="hero-stat-icon"><DollarSign size={22} /></div>
+                                        <div className="hero-stat-content">
+                                            <span className="hero-stat-value">{paymentStats?.totalRevenue?.toLocaleString() || '0'}</span>
+                                            <span className="hero-stat-label">Jami daromad (so'm)</span>
+                                        </div>
+                                        <div className="hero-stat-decoration"></div>
+                                    </div>
+                                </div>
+
+                                {/* Monthly Summary */}
+                                {paymentStats && (
+                                    <div className="month-summary-row stagger-children">
+                                        <div className="month-card card">
+                                            <div className="month-card-header">
+                                                <Activity size={18} />
+                                                <span>Shu oy statistikasi</span>
+                                            </div>
+                                            <div className="month-stats-grid">
+                                                <div className="month-stat">
+                                                    <span className="month-stat-num">{paymentStats.monthPayments}</span>
+                                                    <span className="month-stat-label">To'lovlar soni</span>
+                                                </div>
+                                                <div className="month-stat-divider"></div>
+                                                <div className="month-stat">
+                                                    <span className="month-stat-num">{paymentStats.monthRevenue?.toLocaleString()}</span>
+                                                    <span className="month-stat-label">Daromad (so'm)</span>
+                                                </div>
+                                                <div className="month-stat-divider"></div>
+                                                <div className="month-stat">
+                                                    <span className="month-stat-num">{data.total_modules}</span>
+                                                    <span className="month-stat-label">Modullar</span>
+                                                </div>
+                                                <div className="month-stat-divider"></div>
+                                                <div className="month-stat">
+                                                    <span className="month-stat-num">{data.total_lessons}</span>
+                                                    <span className="month-stat-label">Darslar</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Module Profitability + Recent Payments Row */}
+                                {paymentStats && (
+                                    <div className="dashboard-bottom-row">
+                                        {/* Module Profitability */}
+                                        <div className="module-profit-card card">
+                                            <div className="profit-header">
+                                                <BarChart3 size={18} />
+                                                <span>Modul daromadlari</span>
+                                            </div>
+                                            {paymentStats.moduleStats.length === 0 ? (
+                                                <p className="empty-text">Hali to'lovlar yo'q</p>
+                                            ) : (
+                                                <div className="profit-bars">
+                                                    {paymentStats.moduleStats.map((m, i) => (
+                                                        <div key={m.name} className="profit-bar-row" style={{ animationDelay: `${i * 0.1}s` }}>
+                                                            <div className="profit-bar-label">
+                                                                <span className="profit-bar-name">{m.name}</span>
+                                                                <span className="profit-bar-amount">{m.revenue?.toLocaleString()} so'm</span>
+                                                            </div>
+                                                            <div className="profit-bar-track">
+                                                                <div
+                                                                    className="profit-bar-fill"
+                                                                    style={{
+                                                                        '--target-width': `${(m.revenue / paymentStats.maxRevenue) * 100}%`,
+                                                                        animationDelay: `${0.3 + i * 0.15}s`
+                                                                    }}
+                                                                ></div>
+                                                            </div>
+                                                            <span className="profit-bar-count">{m.count} ta</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Recent Payments */}
+                                        <div className="recent-payments-card card">
+                                            <div className="profit-header">
+                                                <TrendingUp size={18} />
+                                                <span>Oxirgi to'lovlar</span>
+                                            </div>
+                                            {paymentStats.recentPayments.length === 0 ? (
+                                                <p className="empty-text">Hali to'lovlar yo'q</p>
+                                            ) : (
+                                                <div className="recent-list">
+                                                    {paymentStats.recentPayments.map((p, i) => (
+                                                        <div key={p.id} className="recent-item" style={{ animationDelay: `${i * 0.08}s` }}>
+                                                            <div className="recent-item-avatar">
+                                                                {p.user_name?.charAt(0)?.toUpperCase() || '?'}
+                                                            </div>
+                                                            <div className="recent-item-info">
+                                                                <span className="recent-item-name">{p.user_name}</span>
+                                                                <span className="recent-item-module">{p.module_name}</span>
+                                                            </div>
+                                                            <div className="recent-item-amount">
+                                                                <span className="recent-amount-value">+{p.amount?.toLocaleString()}</span>
+                                                                <span className="recent-amount-date">{p.created_at?.slice(0, 10)}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -484,7 +649,7 @@ export default function AdminPage() {
                                         {conversations.length === 0 && <p className="empty-text">Hali xabar yo'q</p>}
                                         {conversations.map(c => (
                                             <div key={c.student_id} className="conv-card card">
-                                                <div className="conv-info" onClick={() => openChat(c.student_id)} style={{cursor:'pointer',flex:1}}>
+                                                <div className="conv-info" onClick={() => openChat(c.student_id)} style={{ cursor: 'pointer', flex: 1 }}>
                                                     <strong>{c.student_name}</strong>
                                                     <small>{c.student_phone}</small>
                                                     <p className="conv-last">{c.last_message}</p>
@@ -493,8 +658,8 @@ export default function AdminPage() {
                                                     {c.unread > 0 && <span className="unread-dot">{c.unread}</span>}
                                                     {c.telegram_link && (
                                                         <a href={c.telegram_link} target="_blank" rel="noopener noreferrer"
-                                                           className="btn btn-sm btn-primary" style={{fontSize:'0.7rem',padding:'0.3rem 0.6rem'}}
-                                                           onClick={e => e.stopPropagation()}>
+                                                            className="btn btn-sm btn-primary" style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem' }}
+                                                            onClick={e => e.stopPropagation()}>
                                                             📱 Telegram
                                                         </a>
                                                     )}
@@ -511,15 +676,15 @@ export default function AdminPage() {
                                             </button>
                                             <span className="chat-detail-name">
                                                 {conversations.find(c => c.student_id === selectedChat)?.student_name}
-                                                <small style={{marginLeft:'0.5rem',color:'var(--text-muted)',fontWeight:400}}>
+                                                <small style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontWeight: 400 }}>
                                                     {conversations.find(c => c.student_id === selectedChat)?.student_phone}
                                                 </small>
                                             </span>
-                                            <div style={{display:'flex',gap:'0.35rem'}}>
+                                            <div style={{ display: 'flex', gap: '0.35rem' }}>
                                                 {conversations.find(c => c.student_id === selectedChat)?.telegram_link && (
                                                     <a href={conversations.find(c => c.student_id === selectedChat)?.telegram_link}
-                                                       target="_blank" rel="noopener noreferrer"
-                                                       className="btn btn-sm btn-primary" style={{fontSize:'0.75rem'}}>
+                                                        target="_blank" rel="noopener noreferrer"
+                                                        className="btn btn-sm btn-primary" style={{ fontSize: '0.75rem' }}>
                                                         📱 TG
                                                     </a>
                                                 )}
