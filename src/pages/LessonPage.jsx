@@ -271,7 +271,7 @@ export default function LessonPage() {
 
     const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
-    if (loading) return <div className="page-loader"><div className="spinner" /></div>;
+    if (loading) return <div className="page-loader"><div className="branded-loader"><img src="/logo.png" alt="MDev" className="branded-loader-logo" /><span className="branded-loader-text">MDev...</span><div className="branded-loader-dots"><span></span><span></span><span></span></div></div></div>;
 
     // Video URL rendering — supports YouTube and direct video links
     const renderVideo = (url) => {

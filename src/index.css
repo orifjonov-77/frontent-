@@ -17,37 +17,39 @@
 
 /* ====== LIGHT THEME ====== */
 [data-theme="light"] {
-  --bg: #f8fafc;
+  --bg: #f0f4ff;
   --bg-card: #ffffff;
-  --bg-card-hover: #f1f5f9;
-  --bg-glass: rgba(255, 255, 255, 0.7);
+  --bg-card-hover: #f0f0ff;
+  --bg-glass: rgba(255, 255, 255, 0.75);
   --bg-input: #f1f5f9;
-  --bg-nav: rgba(255, 255, 255, 0.85);
-  --bg-secondary: #f1f5f9;
+  --bg-nav: rgba(255, 255, 255, 0.88);
+  --bg-secondary: #f0f0ff;
   --text: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --border: #e2e8f0;
-  --border-light: #f1f5f9;
+  --text-secondary: #3e4c6a;
+  --text-muted: #7c8db5;
+  --border: #dde3f0;
+  --border-light: #eef2ff;
   --border-focus: #6366f1;
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --primary-light: rgba(99, 102, 241, 0.1);
-  --primary-glow: rgba(99, 102, 241, 0.25);
-  --accent: #6366f1;
-  --accent-light: rgba(99, 102, 241, 0.1);
-  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
-  --success: #10b981;
-  --success-bg: rgba(16, 185, 129, 0.1);
-  --warning: #f59e0b;
-  --warning-bg: rgba(245, 158, 11, 0.1);
-  --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.1);
-  --info: #3b82f6;
-  --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
-  --gradient-subtle: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
-  --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --primary: #5b4cdb;
+  --primary-hover: #4338ca;
+  --primary-light: rgba(91, 76, 219, 0.1);
+  --primary-glow: rgba(91, 76, 219, 0.3);
+  --accent: #5b4cdb;
+  --accent-light: rgba(91, 76, 219, 0.1);
+  --accent-gradient: linear-gradient(135deg, #5b4cdb 0%, #8b5cf6 50%, #c084fc 100%);
+  --success: #059669;
+  --success-bg: rgba(5, 150, 105, 0.1);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.1);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.1);
+  --info: #2563eb;
+  --gradient: linear-gradient(135deg, #5b4cdb 0%, #8b5cf6 50%, #c084fc 100%);
+  --gradient-subtle: linear-gradient(135deg, rgba(91, 76, 219, 0.06) 0%, rgba(139, 92, 246, 0.06) 100%);
+  --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8faff 100%);
+  --shadow-sm: 0 2px 12px rgba(91, 76, 219, 0.06);
+  --radius: 16px;
+  --radius-sm: 10px;
 }
 
 /* ====== DARK THEME ====== */

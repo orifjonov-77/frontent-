@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { coursesAPI, paymentsAPI } from '../api/client';
+import { getModulePrice } from '../config/prices';
 import { BookOpen, Lock, CheckCircle, ArrowRight, Loader, CreditCard, PlayCircle, Layers } from 'lucide-react';
 import './ModulesPage.css';
 
@@ -34,7 +35,15 @@ export default function ModulesPage() {
         return myPayments.some(p => p.module_id === moduleId && p.status === 'pending');
     };
 
-    if (loading) return <div className="page-loader"><div className="spinner" /></div>;
+    if (loading) return (
+        <div className="page-loader">
+            <div className="branded-loader">
+                <img src="/logo.png" alt="MDev" className="branded-loader-logo" />
+                <span className="branded-loader-text">MDev...</span>
+                <div className="branded-loader-dots"><span></span><span></span><span></span></div>
+            </div>
+        </div>
+    );
 
     const gradients = [
         'linear-gradient(135deg, #10b981, #059669)',
@@ -64,7 +73,7 @@ export default function ModulesPage() {
                                 <p>{m.description}</p>
                             </div>
                             <div className="module-pricing">
-                                <span className="price">{m.price?.toLocaleString()} so'm</span>
+                                <span className="price">{getModulePrice(m.name, m.price).toLocaleString()} so'm</span>
                                 {isPaid(m.id) ? (
                                     <span className="badge badge-success"><CheckCircle size={12} /> To'langan</span>
                                 ) : isPending(m.id) ? (

@@ -24,7 +24,7 @@ export default function CoursePage() {
         setLoading(false);
     };
 
-    if (loading) return <div className="page-loader"><div className="spinner" /></div>;
+    if (loading) return <div className="page-loader"><div className="branded-loader"><img src="/logo.png" alt="MDev" className="branded-loader-logo" /><span className="branded-loader-text">MDev...</span><div className="branded-loader-dots"><span></span><span></span><span></span></div></div></div>;
     if (!course) return <div className="container"><p>Kurs topilmadi</p></div>;
 
     return (

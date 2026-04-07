@@ -5,7 +5,13 @@ const ThemeContext = createContext(null);
 export function ThemeProvider({ children }) {
     const [theme, setTheme] = useState(() => {
         const saved = localStorage.getItem('theme');
-        return saved || 'light';
+        // Agar foydalanuvchi hech qachon tema tanlamagan bo'lsa YOKI
+        // eski versiyada 'dark' saqlangan bo'lsa — light ga o'tkazamiz
+        if (!saved || !localStorage.getItem('theme_v2')) {
+            localStorage.setItem('theme_v2', '1');
+            return 'light';
+        }
+        return saved;
     });
 
     useEffect(() => {

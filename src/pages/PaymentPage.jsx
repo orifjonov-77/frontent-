@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { paymentsAPI, coursesAPI } from '../api/client';
+import { getModulePrice } from '../config/prices';
 import { CreditCard, Upload, Loader, CheckCircle, AlertCircle, ArrowLeft, Clock, Image, Copy, Check, ShieldCheck, ArrowRight } from 'lucide-react';
 import './PaymentPage.css';
 
@@ -82,7 +83,15 @@ export default function PaymentPage() {
     };
 
     if (!user) { navigate('/login'); return null; }
-    if (loading) return <div className="page-loader"><div className="spinner" /></div>;
+    if (loading) return (
+        <div className="page-loader">
+            <div className="branded-loader">
+                <img src="/logo.png" alt="MDev" className="branded-loader-logo" />
+                <span className="branded-loader-text">MDev...</span>
+                <div className="branded-loader-dots"><span></span><span></span><span></span></div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="payment-page container animate-fade">
@@ -113,7 +122,7 @@ export default function PaymentPage() {
                         <div className="module-info-pay">
                             <div className="module-pay-icon">💳</div>
                             <h3>{selectedModule.name}</h3>
-                            <p className="price">{selectedModule.price?.toLocaleString()} so'm</p>
+                            <p className="price">{getModulePrice(selectedModule.name, selectedModule.price).toLocaleString()} so'm</p>
                         </div>
                     )}
 

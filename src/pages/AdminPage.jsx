@@ -419,7 +419,7 @@ export default function AdminPage() {
 
             <div className="admin-content">
                 {loading && tab !== 'content' ? (
-                    <div className="page-loader"><div className="spinner" /></div>
+                    <div className="page-loader"><div className="branded-loader"><img src="/logo.png" alt="MDev" className="branded-loader-logo" /><span className="branded-loader-text">MDev...</span><div className="branded-loader-dots"><span></span><span></span><span></span></div></div></div>
                 ) : (
                     <>
                         {/* ============ DASHBOARD ============ */}
@@ -1216,7 +1216,7 @@ export default function AdminPage() {
             {/* Student Detail Modal */}
             <Modal open={!!studentDetail} title={`👤 ${studentDetail?.full_name || 'Talaba'}`} onClose={() => setStudentDetail(null)}>
                 {studentDetailLoading ? (
-                    <div className="page-loader"><div className="spinner" /></div>
+                    <div className="page-loader"><div className="branded-loader"><img src="/logo.png" alt="MDev" className="branded-loader-logo" /><span className="branded-loader-text">MDev...</span><div className="branded-loader-dots"><span></span><span></span><span></span></div></div></div>
                 ) : studentDetail ? (
                     <div className="student-detail-content">
                         {/* Basic Info */}
