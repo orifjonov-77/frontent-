@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -19,7 +19,15 @@ const ResultsPage = lazy(() => import('./pages/ResultsPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 
 const PageLoader = () => (
-  <div className="page-loader"><div className="spinner" /></div>
+  <div className="page-loader">
+    <div className="branded-loader">
+      <img src="/logo.png" alt="MDev" className="branded-loader-logo" />
+      <span className="branded-loader-text">MDev...</span>
+      <div className="branded-loader-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
 );
 
 function ProtectedRoute({ children }) {
@@ -62,7 +70,11 @@ function AppContent() {
   );
 }
 
-export default function App() {
+export default function App({ onReady }) {
+  useEffect(() => {
+    if (onReady) onReady();
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>

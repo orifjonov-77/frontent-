@@ -2,77 +2,6 @@
   padding-bottom: 3rem;
 }
 
-/* ====== MARQUEE ====== */
-.marquee-wrapper {
-  overflow: hidden;
-  background: var(--gradient);
-  padding: 0.65rem 0;
-  position: relative;
-}
-
-.marquee-wrapper::before,
-.marquee-wrapper::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 60px;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.marquee-wrapper::before {
-  left: 0;
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.9), transparent);
-}
-
-.marquee-wrapper::after {
-  right: 0;
-  background: linear-gradient(-90deg, rgba(139, 92, 246, 0.9), transparent);
-}
-
-.marquee-track {
-  display: flex;
-  gap: 2.5rem;
-  animation: marqueeScroll 30s linear infinite;
-  width: max-content;
-  will-change: transform;
-}
-
-.marquee-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.marquee-icon {
-  font-size: 1rem;
-}
-
-.marquee-text {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
-  letter-spacing: 0.01em;
-}
-
-@keyframes marqueeScroll {
-  0% {
-    transform: translateX(0);
-  }
-
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-/* Pause on hover */
-.marquee-wrapper:hover .marquee-track {
-  animation-play-state: paused;
-}
-
 /* HERO */
 .hero {
   padding: 3.5rem 0 3rem;
@@ -243,7 +172,6 @@
   padding: 3rem 0;
 }
 
-/* ====== RESPONSIVE ====== */
 @media (max-width: 768px) {
   .hero {
     padding: 2rem 0 1.5rem;
@@ -256,18 +184,5 @@
   .hero-stats {
     gap: 1.5rem;
     flex-wrap: wrap;
-  }
-
-  .marquee-text {
-    font-size: 0.75rem;
-  }
-
-  .marquee-track {
-    gap: 2rem;
-  }
-
-  .marquee-wrapper::before,
-  .marquee-wrapper::after {
-    width: 30px;
   }
 }

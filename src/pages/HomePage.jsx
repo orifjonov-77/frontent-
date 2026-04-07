@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { coursesAPI } from '../api/client';
-import { BookOpen, Code, Monitor, Scissors, ArrowRight, Star, Users, Award, Zap, CheckCircle, PlayCircle } from 'lucide-react';
+import { BookOpen, Code, Monitor, Scissors, ArrowRight, Users, Award, Zap } from 'lucide-react';
 import './HomePage.css';
 
 export default function HomePage() {
@@ -22,34 +22,8 @@ export default function HomePage() {
   };
   const colorMap = ['#10b981', '#6c5ce7', '#f59e0b', '#e11d48', '#3b82f6'];
 
-  // Marquee items
-  const marqueeItems = [
-    { icon: '🚀', text: 'Professional IT kurslar' },
-    { icon: '📹', text: 'Sifatli video darslar' },
-    { icon: '📝', text: 'Interaktiv testlar' },
-    { icon: '🏆', text: "Reyting tizimi" },
-    { icon: '🎮', text: "Amaliy mashg'ulotlar" },
-    { icon: '📋', text: 'Uy vazifalari' },
-    { icon: '🤖', text: 'AI yordamchi' },
-    { icon: '📊', text: 'Imtihonlar' },
-    { icon: '🎯', text: '24/7 qo\'llab-quvvatlash' },
-    { icon: '⚡', text: 'Tezkor natijalar' },
-  ];
-
   return (
     <div className="home">
-      {/* Marquee Banner */}
-      <div className="marquee-wrapper">
-        <div className="marquee-track">
-          {[...marqueeItems, ...marqueeItems].map((item, i) => (
-            <div key={i} className="marquee-item">
-              <span className="marquee-icon">{item.icon}</span>
-              <span className="marquee-text">{item.text}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Hero */}
       <section className="hero">
         <div className="container">

@@ -8,6 +8,20 @@ import {
 } from 'lucide-react';
 import './Layout.css';
 
+// Marquee items
+const marqueeItems = [
+    { icon: '🚀', text: 'Professional IT kurslar' },
+    { icon: '📹', text: 'Sifatli video darslar' },
+    { icon: '📝', text: 'Interaktiv testlar' },
+    { icon: '🏆', text: "Reyting tizimi" },
+    { icon: '🎮', text: "Amaliy mashg'ulotlar" },
+    { icon: '📋', text: 'Uy vazifalari' },
+    { icon: '🤖', text: 'AI yordamchi' },
+    { icon: '📊', text: 'Imtihonlar' },
+    { icon: '🎯', text: "24/7 qo'llab-quvvatlash" },
+    { icon: '⚡', text: 'Tezkor natijalar' },
+];
+
 export default function Layout() {
     const { user, logout, isAdmin } = useAuth();
     const { theme, toggleTheme } = useTheme();
@@ -34,10 +48,10 @@ export default function Layout() {
     const isActive = (path) => location.pathname === path ? 'active' : '';
 
     const navItems = [
-        { path: '/',        icon: <Home size={17} />,     label: 'Bosh sahifa' },
+        { path: '/', icon: <Home size={17} />, label: 'Bosh sahifa' },
         { path: '/modules', icon: <BookOpen size={17} />, label: 'Modullar' },
-        { path: '/rating',  icon: <Trophy size={17} />,   label: 'Reyting' },
-        { path: '/terms',   icon: <FileText size={17} />, label: 'Qoidalar' },
+        { path: '/rating', icon: <Trophy size={17} />, label: 'Reyting' },
+        { path: '/terms', icon: <FileText size={17} />, label: 'Qoidalar' },
     ];
 
     return (
@@ -45,7 +59,8 @@ export default function Layout() {
             <nav className="nav">
                 <div className="nav-inner">
                     <Link to="/" className="nav-logo">
-                        MDev Academy
+                        <img src="/logo.png" alt="MDev" className="nav-logo-img" />
+                        <span className="nav-logo-text">MDev</span>
                     </Link>
 
                     <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
@@ -112,6 +127,18 @@ export default function Layout() {
                     </div>
                 </div>
             </nav>
+
+            {/* Marquee Banner — below header */}
+            <div className="marquee-wrapper">
+                <div className="marquee-track">
+                    {[...marqueeItems, ...marqueeItems].map((item, i) => (
+                        <div key={i} className="marquee-item">
+                            <span className="marquee-icon">{item.icon}</span>
+                            <span className="marquee-text">{item.text}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
 
             <main className="page">
                 <div className="container">
