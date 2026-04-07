@@ -193,9 +193,11 @@
 /* ====== MARQUEE ====== */
 .marquee-wrapper {
   overflow: hidden;
-  background: var(--gradient);
+  background: linear-gradient(135deg, #5b4cdb 0%, #8b5cf6 50%, #c084fc 100%);
+  background: var(--gradient, linear-gradient(135deg, #5b4cdb 0%, #8b5cf6 50%, #c084fc 100%));
   padding: 0.55rem 0;
   position: relative;
+  z-index: 10;
 }
 
 .marquee-wrapper::before,
