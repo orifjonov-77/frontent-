@@ -1,19 +1,55 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, Code, Monitor, Scissors, ArrowRight, Star, Users, Award } from 'lucide-react';
+import { coursesAPI } from '../api/client';
+import { BookOpen, Code, Monitor, Scissors, ArrowRight, Star, Users, Award, Zap, CheckCircle, PlayCircle } from 'lucide-react';
 import './HomePage.css';
 
 export default function HomePage() {
   const { user } = useAuth();
+  const [modules, setModules] = useState([]);
 
-  const modules = [
-    { icon: <Monitor size={32} />, title: "Kompyuter savodxonligi", desc: "Word, Excel, PowerPoint, Canva", price: "100,000", color: "#10b981" },
-    { icon: <Code size={32} />, title: "Dasturlash", desc: "HTML, CSS, JS, React, Python, FastAPI", price: "130,000", color: "#6c5ce7" },
-    { icon: <Scissors size={32} />, title: "Montaj", desc: "CapCut, Premiere Pro, video montaj", price: "90,000", color: "#f59e0b" },
+  useEffect(() => {
+    coursesAPI.getModules()
+      .then(res => setModules(res.data))
+      .catch(() => { });
+  }, []);
+
+  const iconMap = {
+    0: <Monitor size={32} />,
+    1: <Code size={32} />,
+    2: <Scissors size={32} />,
+  };
+  const colorMap = ['#10b981', '#6c5ce7', '#f59e0b', '#e11d48', '#3b82f6'];
+
+  // Marquee items
+  const marqueeItems = [
+    { icon: '🚀', text: 'Professional IT kurslar' },
+    { icon: '📹', text: 'Sifatli video darslar' },
+    { icon: '📝', text: 'Interaktiv testlar' },
+    { icon: '🏆', text: "Reyting tizimi" },
+    { icon: '🎮', text: "Amaliy mashg'ulotlar" },
+    { icon: '📋', text: 'Uy vazifalari' },
+    { icon: '🤖', text: 'AI yordamchi' },
+    { icon: '📊', text: 'Imtihonlar' },
+    { icon: '🎯', text: '24/7 qo\'llab-quvvatlash' },
+    { icon: '⚡', text: 'Tezkor natijalar' },
   ];
 
   return (
     <div className="home">
+      {/* Marquee Banner */}
+      <div className="marquee-wrapper">
+        <div className="marquee-track">
+          {[...marqueeItems, ...marqueeItems].map((item, i) => (
+            <div key={i} className="marquee-item">
+              <span className="marquee-icon">{item.icon}</span>
+              <span className="marquee-text">{item.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Hero */}
       <section className="hero">
         <div className="container">
@@ -46,7 +82,7 @@ export default function HomePage() {
           <div className="hero-stats stagger-children">
             <div className="stat-item">
               <BookOpen size={24} className="stat-icon" />
-              <div><strong>3</strong><span>Modul</span></div>
+              <div><strong>{modules.length || 3}</strong><span>Modul</span></div>
             </div>
             <div className="stat-item">
               <Users size={24} className="stat-icon" />
@@ -60,22 +96,26 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Modules */}
+      {/* Modules — prices from API */}
       <section className="modules-section">
         <div className="container">
           <h2 className="section-title">Bizning modullar</h2>
           <p className="section-desc">Har bir modul professional darajada tayyorlangan</p>
 
           <div className="modules-grid stagger-slide">
-            {modules.map((m, i) => (
-              <div key={i} className="module-card card card-interactive">
-                <div className="module-icon" style={{ background: `${m.color}15`, color: m.color }}>
-                  {m.icon}
+            {(modules.length > 0 ? modules : [
+              { id: 1, name: "Kompyuter savodxonligi", description: "Word, Excel, PowerPoint, Canva", price: 0 },
+              { id: 2, name: "Dasturlash", description: "HTML, CSS, JS, React, Python, FastAPI", price: 0 },
+              { id: 3, name: "Montaj", description: "CapCut, Premiere Pro, video montaj", price: 0 },
+            ]).map((m, i) => (
+              <div key={m.id || i} className="module-card card card-interactive">
+                <div className="module-icon" style={{ background: `${colorMap[i % 5]}15`, color: colorMap[i % 5] }}>
+                  {iconMap[i] || <Zap size={32} />}
                 </div>
-                <h3>{m.title}</h3>
-                <p>{m.desc}</p>
+                <h3>{m.name}</h3>
+                <p>{m.description}</p>
                 <div className="module-price">
-                  <span className="price-amount">{m.price}</span>
+                  <span className="price-amount">{m.price ? m.price.toLocaleString() : '—'}</span>
                   <span className="price-label">so'm</span>
                 </div>
                 <Link to="/modules" className="btn btn-secondary" style={{ width: '100%' }}>

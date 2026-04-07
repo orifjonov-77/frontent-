@@ -7,9 +7,9 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// In-memory GET cache (30 sekund)
+// In-memory GET cache (60 sekund — tezlik uchun)
 const apiCache = new Map();
-const CACHE_TTL = 30000;
+const CACHE_TTL = 60000;
 
 // Auto-attach token
 api.interceptors.request.use((config) => {

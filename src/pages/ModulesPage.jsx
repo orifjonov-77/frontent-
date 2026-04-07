@@ -18,12 +18,11 @@ export default function ModulesPage() {
 
     const loadData = async () => {
         try {
-            const res = await coursesAPI.getModules();
-            setModules(res.data);
-            if (user) {
-                const pRes = await paymentsAPI.getMy();
-                setMyPayments(pRes.data);
-            }
+            const promises = [coursesAPI.getModules()];
+            if (user) promises.push(paymentsAPI.getMy());
+            const results = await Promise.all(promises);
+            setModules(results[0].data);
+            if (user && results[1]) setMyPayments(results[1].data);
         } catch (err) { console.error(err); }
         setLoading(false);
     };
