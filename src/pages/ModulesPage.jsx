@@ -1,30 +1,42 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
+import { useToast } from '../context/ToastContext';
 import { coursesAPI, paymentsAPI } from '../api/client';
 import { getModulePrice } from '../config/prices';
-import { BookOpen, Lock, CheckCircle, ArrowRight, Loader, CreditCard, PlayCircle, Layers } from 'lucide-react';
+import { BookOpen, Lock, CheckCircle, ArrowRight, Loader, CreditCard, PlayCircle, Layers, RefreshCw, WifiOff } from 'lucide-react';
+import myLogo from '../assets/mylogo.png';
 import './ModulesPage.css';
 
 export default function ModulesPage() {
     const [modules, setModules] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
     const [myPayments, setMyPayments] = useState([]);
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { t } = useLang();
+    const toast = useToast();
 
     useEffect(() => {
         loadData();
     }, []);
 
     const loadData = async () => {
+        setLoading(true);
+        setError(false);
         try {
             const promises = [coursesAPI.getModules()];
             if (user) promises.push(paymentsAPI.getMy());
             const results = await Promise.all(promises);
             setModules(results[0].data);
             if (user && results[1]) setMyPayments(results[1].data);
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error(err);
+            setError(true);
+            toast.error(t('loadError'));
+        }
         setLoading(false);
     };
 
@@ -38,9 +50,25 @@ export default function ModulesPage() {
     if (loading) return (
         <div className="page-loader">
             <div className="branded-loader">
-                <img src="/logo.png" alt="MDev" className="branded-loader-logo" />
+                <img src={myLogo} alt="MDev" className="branded-loader-logo" />
                 <span className="branded-loader-text">MDev...</span>
                 <div className="branded-loader-dots"><span></span><span></span><span></span></div>
+            </div>
+        </div>
+    );
+
+    if (error || modules.length === 0) return (
+        <div className="modules-page container animate-fade">
+            <div className="page-header">
+                <h1>{t('modules')}</h1>
+            </div>
+            <div className="modules-empty">
+                <WifiOff size={48} className="modules-empty-icon" />
+                <h3>{t('loadError')}</h3>
+                <p>{t('loadErrorDesc')}</p>
+                <button className="btn btn-primary" onClick={loadData}>
+                    <RefreshCw size={16} /> {t('retry')}
+                </button>
             </div>
         </div>
     );
@@ -57,8 +85,8 @@ export default function ModulesPage() {
     return (
         <div className="modules-page container animate-fade">
             <div className="page-header">
-                <h1>Modullar</h1>
-                <p>O'zingizga mos modulni tanlang va o'rganishni boshlang</p>
+                <h1>{t('modules')}</h1>
+                <p>{t('chooseModule')}</p>
             </div>
 
             <div className="modules-list">
@@ -73,14 +101,14 @@ export default function ModulesPage() {
                                 <p>{m.description}</p>
                             </div>
                             <div className="module-pricing">
-                                <span className="price">{getModulePrice(m.name, m.price).toLocaleString()} so'm</span>
+                                <span className="price">{getModulePrice(m.name, m.price).toLocaleString()} {t('som')}</span>
                                 {isPaid(m.id) ? (
-                                    <span className="badge badge-success"><CheckCircle size={12} /> To'langan</span>
+                                    <span className="badge badge-success"><CheckCircle size={12} /> {t('paid')}</span>
                                 ) : isPending(m.id) ? (
-                                    <span className="badge badge-warning"><Loader size={12} /> Tekshirilmoqda</span>
+                                    <span className="badge badge-warning"><Loader size={12} /> {t('checking')}</span>
                                 ) : (
                                     <Link to={`/payment/${m.id}`} className="btn btn-primary btn-sm">
-                                        <CreditCard size={14} /> To'lash
+                                        <CreditCard size={14} /> {t('pay')}
                                     </Link>
                                 )}
                             </div>
@@ -100,7 +128,7 @@ export default function ModulesPage() {
                                             {c.description && <p className="course-card-desc">{c.description}</p>}
                                             <div className="course-card-footer">
                                                 <span className="course-lessons-count">
-                                                    <Layers size={12} /> {c.lessons_count || 0} dars
+                                                    <Layers size={12} /> {c.lessons_count || 0} {t('lesson')}
                                                 </span>
                                                 <ArrowRight size={16} className="course-card-arrow" />
                                             </div>

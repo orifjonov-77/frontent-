@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
 import { coursesAPI, testsAPI, homeworkAPI, clearApiCache } from '../api/client';
 import { useModal } from '../components/Modal';
 import { Play, CheckCircle, Clock, FileText, BookOpen, ArrowLeft, AlertCircle, Send, Loader, Upload, Lock, X, File as FileIcon } from 'lucide-react';
+import myLogo from '../assets/mylogo.png';
 import './LessonPage.css';
 
 export default function LessonPage() {
     const { lessonId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { t } = useLang();
     const [progress, setProgress] = useState(null);
     const [activeTab, setActiveTab] = useState('video');
     const [test, setTest] = useState(null);
@@ -171,9 +174,9 @@ export default function LessonPage() {
         try {
             const res = await coursesAPI.watchVideo(lessonId);
             setProgress(prev => ({ ...prev, video_watched: true, video_watched_at: res.data.video_watched_at }));
-            showSuccess("Video ko'rildi!", "Endi testni yechishingiz va vazifani topshirishingiz mumkin.");
+            showSuccess(t('videoWatchedMsg'), t('videoWatchedDesc'));
         } catch (err) {
-            showError('Xatolik', err.response?.data?.detail || 'Video belgilashda xatolik');
+            showError(t('errorOccurred'), err.response?.data?.detail || t('errorOccurred'));
         }
     };
 
@@ -193,7 +196,7 @@ export default function LessonPage() {
                 });
             }, 1000);
         } catch (err) {
-            showError('Test boshlanmadi', err.response?.data?.detail || 'Xatolik');
+            showError(t('errorOccurred'), err.response?.data?.detail || t('errorOccurred'));
         }
     };
 
@@ -210,12 +213,12 @@ export default function LessonPage() {
             setTestStarted(false);
             if (res.data.passed) {
                 setProgress(prev => ({ ...prev, test_passed: true }));
-                showSuccess('Test muvaffaqiyatli!', `Natija: ${res.data.score}/${res.data.total} — Baho: ${res.data.grade}`);
+                showSuccess(t('testSuccess'), `${t('grade')}: ${res.data.score}/${res.data.total} — ${res.data.grade}`);
             } else {
-                showWarning('Test yechilmadi', `Natija: ${res.data.score}/${res.data.total} — Baho: ${res.data.grade}`);
+                showWarning(t('testFailed'), `${t('grade')}: ${res.data.score}/${res.data.total} — ${res.data.grade}`);
             }
         } catch (err) {
-            showError('Xatolik', err.response?.data?.detail || 'Test topshirishda xatolik');
+            showError(t('errorOccurred'), err.response?.data?.detail || t('errorOccurred'));
         }
         setSubmitting(false);
     };
@@ -227,14 +230,14 @@ export default function LessonPage() {
     };
 
     const getGradeLabel = (grade) => {
-        if (grade >= 3) return "A'lo";
-        if (grade >= 2) return "Yaxshi";
-        return "Qoniqarli";
+        if (grade >= 3) return t('excellent');
+        if (grade >= 2) return t('good');
+        return t('satisfactory');
     };
 
     const submitHomework = async () => {
         if (!hwText.trim() && !hwFile && !hwFileUrl.trim()) {
-            showError('Xatolik', 'Javob matni yoki fayl yuklang');
+            showError(t('errorOccurred'), t('answerOrFile'));
             return;
         }
         setSubmitting(true);
@@ -248,11 +251,11 @@ export default function LessonPage() {
             }
             await homeworkAPI.submit(homework.id, formData);
             setProgress(prev => ({ ...prev, homework_submitted: true }));
-            showSuccess('Vazifa topshirildi!', 'Admin tekshirishini kuting. Tasdiqlangandan keyin keyingi video ochiladi.');
+            showSuccess(t('hwSubmitted'), t('hwSubmitDesc'));
             const s = await homeworkAPI.getStatus(homework.id);
             setHwStatus(s.data);
         } catch (err) {
-            showError('Xatolik', err.response?.data?.detail || 'Vazifa topshirishda xatolik');
+            showError(t('errorOccurred'), err.response?.data?.detail || t('errorOccurred'));
         }
         setSubmitting(false);
     };
@@ -261,7 +264,7 @@ export default function LessonPage() {
         const file = e.target.files?.[0];
         if (file) {
             if (file.size > 10 * 1024 * 1024) {
-                showError('Xatolik', 'Fayl hajmi 10MB dan oshmasin');
+                showError(t('errorOccurred'), t('maxSize'));
                 return;
             }
             setHwFile(file);
@@ -271,14 +274,14 @@ export default function LessonPage() {
 
     const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
-    if (loading) return <div className="page-loader"><div className="branded-loader"><img src="/logo.png" alt="MDev" className="branded-loader-logo" /><span className="branded-loader-text">MDev...</span><div className="branded-loader-dots"><span></span><span></span><span></span></div></div></div>;
+    if (loading) return <div className="page-loader"><div className="branded-loader"><img src={myLogo} alt="MDev" className="branded-loader-logo" /><span className="branded-loader-text">MDev...</span><div className="branded-loader-dots"><span></span><span></span><span></span></div></div></div>;
 
     // Video URL rendering — supports YouTube and direct video links
     const renderVideo = (url) => {
         if (!url) return (
             <div className="video-placeholder">
                 <Lock size={48} />
-                <p>Video mavjud emas</p>
+                <p>{t('videoNotAvail')}</p>
             </div>
         );
 
@@ -336,7 +339,7 @@ export default function LessonPage() {
                         }} />
                     </div>
                     <p className="test-answered-count">
-                        {Object.keys(testAnswers).length}/{test.questions?.length || 0} javob berildi
+                        {Object.keys(testAnswers).length}/{test.questions?.length || 0} {t('answered')}
                     </p>
                     <div className="test-fullscreen-questions">
                         {test.questions?.map((q, i) => (
@@ -358,10 +361,10 @@ export default function LessonPage() {
                     <div className="test-fullscreen-footer">
                         <div className="test-warning-banner">
                             <AlertCircle size={16} />
-                            <span>⚠️ Sahifadan chiqsangiz test avtomatik topshiriladi!</span>
+                            <span>⚠️ {t('autoSubmit')}</span>
                         </div>
                         <button onClick={submitTest} className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={submitting}>
-                            {submitting ? <Loader size={18} className="spin" /> : <><Send size={18} /> Topshirish</>}
+                            {submitting ? <Loader size={18} className="spin" /> : <><Send size={18} /> {t('submit')}</>}
                         </button>
                     </div>
                 </div>
@@ -373,20 +376,20 @@ export default function LessonPage() {
         <div className="lesson-page animate-fade">
             {ModalComponent}
 
-            <Link to={-1} className="back-link"><ArrowLeft size={16} /> Orqaga</Link>
+            <Link to={-1} className="back-link"><ArrowLeft size={16} /> {t('backBtn')}</Link>
 
             {/* Tabs */}
             <div className="lesson-tabs">
                 <button className={`tab ${activeTab === 'video' ? 'active' : ''}`} onClick={() => setActiveTab('video')}>
-                    <Play size={16} /> Video
+                    <Play size={16} /> {t('video')}
                 </button>
                 {test && (
                     <button className={`tab ${activeTab === 'test' ? 'active' : ''} ${progress?.test_passed ? 'completed' : ''}`} onClick={() => setActiveTab('test')}>
-                        <FileText size={16} /> Test {progress?.test_passed && <CheckCircle size={12} />}
+                        <FileText size={16} /> {t('test')} {progress?.test_passed && <CheckCircle size={12} />}
                     </button>
                 )}
                 <button className={`tab ${activeTab === 'homework' ? 'active' : ''} ${hwStatus?.is_graded ? 'completed' : ''}`} onClick={() => setActiveTab('homework')}>
-                    <BookOpen size={16} /> Vazifa {hwStatus?.is_graded && <CheckCircle size={12} />}
+                    <BookOpen size={16} /> {t('homework')} {hwStatus?.is_graded && <CheckCircle size={12} />}
                 </button>
             </div>
 
@@ -398,17 +401,17 @@ export default function LessonPage() {
                         {renderVideo(progress?.video_url)}
                         {progress?.description && (
                             <div className="video-description">
-                                <h3>📝 Dars haqida</h3>
+                                <h3>📝 {t('aboutLesson')}</h3>
                                 <p style={{ lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{progress.description}</p>
                             </div>
                         )}
                         {!progress?.video_watched ? (
                             <button onClick={markWatched} className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: '1rem' }}>
-                                <CheckCircle size={18} /> Video ko'rdim
+                                <CheckCircle size={18} /> {t('videoWatched')}
                             </button>
                         ) : (
                             <div className="video-watched-badge">
-                                <CheckCircle size={18} /> Video ko'rilgan
+                                <CheckCircle size={18} /> {t('videoMarked')}
                             </div>
                         )}
                     </div>
@@ -419,21 +422,21 @@ export default function LessonPage() {
                         {testResult ? (
                             <div className="test-result">
                                 <div className={`result-badge ${testResult.passed ? 'passed' : 'failed'}`}>
-                                    {testResult.passed ? '✅ Test muvaffaqiyatli!' : "❌ O'tmadingiz"}
+                                    {testResult.passed ? `✅ ${t('testSuccess')}` : `❌ ${t('testFailed')}`}
                                 </div>
                                 <p className="result-score">{testResult.score}/{testResult.total}</p>
                                 <div className="result-grade">
                                     <span className="grade-emoji">{getGradeEmoji(testResult.grade)}</span>
-                                    <span className="grade-number">Baho: {testResult.grade}</span>
+                                    <span className="grade-number">{t('grade')}: {testResult.grade}</span>
                                     <span className="grade-label">({getGradeLabel(testResult.grade)})</span>
                                 </div>
                                 {!testResult.passed && (
                                     <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: '0.9rem' }}>
-                                        Har bir video uchun faqat 1 marta test yechish mumkin
+                                        {t('oneAttempt')}
                                     </p>
                                 )}
                                 <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                                    ℹ️ Keyingi videoni ochish uchun vazifani topshiring.
+                                    ℹ️ {t('submitTask')}
                                 </p>
                             </div>
                         ) : (
@@ -442,29 +445,29 @@ export default function LessonPage() {
                                 <div className="test-info-cards">
                                     <div className="info-card">
                                         <FileText size={20} />
-                                        <span>{test.questions?.length || 10} savol</span>
+                                        <span>{test.questions?.length || 10} {t('questions')}</span>
                                     </div>
                                     <div className="info-card">
                                         <Clock size={20} />
-                                        <span>{Math.floor(test.time_limit / 60)} daqiqa</span>
+                                        <span>{Math.floor(test.time_limit / 60)} {t('minutes')}</span>
                                     </div>
                                     <div className="info-card">
                                         <AlertCircle size={20} />
-                                        <span>1 urinish</span>
+                                        <span>1 {t('attempt')}</span>
                                     </div>
                                 </div>
                                 <div className="test-warnings">
-                                    <p>🔒 Test vaqtida boshqa sahifaga o'tib bo'lmaydi</p>
-                                    <p>⚠️ Sahifadan chiqsangiz test avtomatik topshiriladi</p>
-                                    <p>⏱️ Vaqt tugaganda test avtomatik topshiriladi</p>
-                                    <p>🔒 Har bir video uchun faqat 1 marta test yechish mumkin</p>
+                                    <p>🔒 {t('noPageLeave')}</p>
+                                    <p>⚠️ {t('autoSubmit')}</p>
+                                    <p>⏱️ {t('timeAutoSubmit')}</p>
+                                    <p>🔒 {t('oneTestAttempt')}</p>
                                 </div>
                                 <button onClick={startTest} className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={!progress?.video_watched}>
-                                    Testni boshlash
+                                    {t('startTest')}
                                 </button>
                                 {!progress?.video_watched && (
                                     <p className="test-warning-msg">
-                                        <AlertCircle size={14} /> Avval videoni ko'ring
+                                        <AlertCircle size={14} /> {t('watchVideoFirst')}
                                     </p>
                                 )}
                             </div>
@@ -474,19 +477,19 @@ export default function LessonPage() {
 
                 {activeTab === 'homework' && (
                     <div className="homework-section">
-                        <h3>{homework?.title || 'Uyga vazifa'}</h3>
+                        <h3>{homework?.title || t('homeworkTitle')}</h3>
                         {homework?.description && <p className="hw-desc">{homework.description}</p>}
 
                         {!homework && (
                             <div className="hw-info-banner" style={{ marginBottom: '1rem' }}>
                                 <Loader size={16} className="spin" />
-                                <span>Vazifa yuklanmoqda...</span>
+                                <span>{t('hwLoading')}</span>
                             </div>
                         )}
 
                         <div className="hw-info-banner">
                             <AlertCircle size={16} />
-                            <span>Vazifani topshiring va admin tasdiqlasa, keyingi video ochiladi</span>
+                            <span>{t('hwInfo')}</span>
                         </div>
 
                         {hwStatus?.submitted ? (
@@ -494,28 +497,28 @@ export default function LessonPage() {
                                 {hwStatus.is_graded ? (
                                     <>
                                         <div className="badge badge-success" style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}>
-                                            <CheckCircle size={14} /> Tasdiqlandi ✅
+                                            <CheckCircle size={14} /> {t('approved')} ✅
                                         </div>
-                                        <p className="hw-grade">Baho: <strong>{hwStatus.score}/2</strong></p>
-                                        {hwStatus.admin_comment && <p className="hw-comment">Izoh: {hwStatus.admin_comment}</p>}
+                                        <p className="hw-grade">{t('grade')}: <strong>{hwStatus.score}/2</strong></p>
+                                        {hwStatus.admin_comment && <p className="hw-comment">{t('comment')}: {hwStatus.admin_comment}</p>}
                                         <p style={{ color: 'var(--success)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                                            ✅ Keyingi video ochildi!
+                                            ✅ {t('nextVideoOpen')}
                                         </p>
                                     </>
                                 ) : (
                                     <div className="hw-pending">
                                         <div className="badge badge-warning" style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}>
-                                            <Clock size={14} /> Tekshirilmoqda (Pending)
+                                            <Clock size={14} /> {t('hwPending')}
                                         </div>
                                         <p style={{ color: 'var(--text-muted)', marginTop: '0.75rem', fontSize: '0.85rem' }}>
-                                            Admin tekshirib, baho qo'yganidan keyin keyingi video ochiladi
+                                            {t('hwWaiting')}
                                         </p>
                                         <div className="hw-resubmit">
                                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '1rem' }}>
-                                                Boshqa javob yubormoqchimisiz?
+                                                {t('resubmitQ')}
                                             </p>
                                             <button className="btn btn-secondary btn-sm" onClick={() => setHwStatus(null)}>
-                                                📝 Qayta topshirish
+                                                📝 {t('resubmit')}
                                             </button>
                                         </div>
                                     </div>
@@ -524,14 +527,14 @@ export default function LessonPage() {
                         ) : homework ? (
                             <div className="hw-form">
                                 <div className="form-group">
-                                    <label>Javob matni</label>
-                                    <textarea className="input" rows={5} placeholder="Vazifa javobini yozing..."
+                                    <label>{t('answerText')}</label>
+                                    <textarea className="input" rows={5} placeholder={t('answerPlaceholder')}
                                         value={hwText} onChange={e => setHwText(e.target.value)} />
                                 </div>
 
                                 {/* File Upload */}
                                 <div className="form-group">
-                                    <label><Upload size={14} /> Fayl yuklash</label>
+                                    <label><Upload size={14} /> {t('uploadFile')}</label>
                                     <div className="file-upload-area" onClick={() => fileInputRef.current?.click()}>
                                         {hwFile ? (
                                             <div className="file-selected">
@@ -544,8 +547,8 @@ export default function LessonPage() {
                                         ) : (
                                             <div className="file-placeholder">
                                                 <Upload size={24} />
-                                                <p>Faylni tanlang yoki bu yerga tashlang</p>
-                                                <small>Maksimal hajm: 10MB</small>
+                                                <p>{t('selectFile')}</p>
+                                                <small>{t('maxSize')}</small>
                                             </div>
                                         )}
                                         <input
@@ -560,18 +563,18 @@ export default function LessonPage() {
 
                                 {!hwFile && (
                                     <div className="form-group">
-                                        <label>Yoki fayl havolasi (ixtiyoriy)</label>
-                                        <input className="input" placeholder="https://drive.google.com/... yoki boshqa havola"
+                                        <label>{t('orFileLink')}</label>
+                                        <input className="input" placeholder={t('fileLinkPlaceholder')}
                                             value={hwFileUrl} onChange={e => setHwFileUrl(e.target.value)} />
                                     </div>
                                 )}
 
                                 <button onClick={submitHomework} className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={submitting || !progress?.video_watched}>
-                                    {submitting ? <Loader size={18} className="spin" /> : <><Send size={18} /> Topshirish</>}
+                                    {submitting ? <Loader size={18} className="spin" /> : <><Send size={18} /> {t('submit')}</>}
                                 </button>
                                 {!progress?.video_watched && (
                                     <p className="test-warning-msg">
-                                        <AlertCircle size={14} /> Avval videoni ko'ring
+                                        <AlertCircle size={14} /> {t('watchVideoFirst')}
                                     </p>
                                 )}
                             </div>

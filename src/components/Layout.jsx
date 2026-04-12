@@ -2,29 +2,18 @@ import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLang } from '../context/LangContext';
 import {
     Home, BookOpen, Trophy, User, Shield,
-    Sun, Moon, Menu, X, LogOut, FileText
+    Sun, Moon, Menu, X, LogOut, FileText, Globe
 } from 'lucide-react';
+import myLogo from '../assets/mylogo.png';
 import './Layout.css';
-
-// Marquee items
-const marqueeItems = [
-    { icon: '🚀', text: 'Professional IT kurslar' },
-    { icon: '📹', text: 'Sifatli video darslar' },
-    { icon: '📝', text: 'Interaktiv testlar' },
-    { icon: '🏆', text: "Reyting tizimi" },
-    { icon: '🎮', text: "Amaliy mashg'ulotlar" },
-    { icon: '📋', text: 'Uy vazifalari' },
-    { icon: '🤖', text: 'AI yordamchi' },
-    { icon: '📊', text: 'Imtihonlar' },
-    { icon: '🎯', text: "24/7 qo'llab-quvvatlash" },
-    { icon: '⚡', text: 'Tezkor natijalar' },
-];
 
 export default function Layout() {
     const { user, logout, isAdmin } = useAuth();
     const { theme, toggleTheme } = useTheme();
+    const { t, nextLang } = useLang();
     const location = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -46,30 +35,35 @@ export default function Layout() {
             { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
         );
 
-        const targets = document.querySelectorAll('.scroll-animate, .stagger-children');
-        targets.forEach(t => observer.observe(t));
-        return () => observer.disconnect();
-    }, [location.pathname]);
+        // Small delay to let DOM render
+        const timer = setTimeout(() => {
+            const targets = document.querySelectorAll('.scroll-animate, .stagger-children');
+            targets.forEach(el => observer.observe(el));
+        }, 100);
 
-    // Close menu on outside click
-    useEffect(() => {
-        if (!menuOpen) return;
-        const handler = (e) => {
-            if (!e.target.closest('.nav-links') && !e.target.closest('.nav-mobile-toggle')) {
-                setMenuOpen(false);
-            }
-        };
-        document.addEventListener('click', handler);
-        return () => document.removeEventListener('click', handler);
-    }, [menuOpen]);
+        return () => { clearTimeout(timer); observer.disconnect(); };
+    }, [location.pathname]);
 
     const isActive = (path) => location.pathname === path ? 'active' : '';
 
     const navItems = [
-        { path: '/', icon: <Home size={17} />, label: 'Bosh sahifa' },
-        { path: '/modules', icon: <BookOpen size={17} />, label: 'Modullar' },
-        { path: '/rating', icon: <Trophy size={17} />, label: 'Reyting' },
-        { path: '/terms', icon: <FileText size={17} />, label: 'Qoidalar' },
+        { path: '/', icon: <Home size={17} />, label: t('home') },
+        { path: '/modules', icon: <BookOpen size={17} />, label: t('modules') },
+        { path: '/rating', icon: <Trophy size={17} />, label: t('rating') },
+        { path: '/terms', icon: <FileText size={17} />, label: t('rules') },
+    ];
+
+    const marqueeItems = [
+        { icon: '🚀', text: t('m1') },
+        { icon: '📹', text: t('m2') },
+        { icon: '📝', text: t('m3') },
+        { icon: '🏆', text: t('m4') },
+        { icon: '🎮', text: t('m5') },
+        { icon: '📋', text: t('m6') },
+        { icon: '🤖', text: t('m7') },
+        { icon: '📊', text: t('m8') },
+        { icon: '🎯', text: t('m9') },
+        { icon: '⚡', text: t('m10') },
     ];
 
     return (
@@ -77,7 +71,7 @@ export default function Layout() {
             <nav className="nav">
                 <div className="nav-inner">
                     <Link to="/" className="nav-logo">
-                        <img src="/logo.png" alt="MDev" className="nav-logo-img" />
+                        <img src={myLogo} alt="MDev" className="nav-logo-img" />
                         <span className="nav-logo-text">MDev</span>
                     </Link>
 
@@ -99,7 +93,7 @@ export default function Layout() {
                                 className={`nav-link ${isActive('/profile')}`}
                             >
                                 <User size={17} />
-                                Profil
+                                {t('profile')}
                             </Link>
                         )}
 
@@ -109,17 +103,27 @@ export default function Layout() {
                                 className={`nav-link ${isActive('/admin')}`}
                             >
                                 <Shield size={17} />
-                                Admin
+                                {t('admin')}
                             </Link>
                         )}
                     </div>
 
                     <div className="nav-actions">
                         <button
+                            className="btn-icon lang-toggle"
+                            onClick={nextLang}
+                            title="Language"
+                            aria-label="Switch language"
+                        >
+                            <Globe size={16} />
+                            <span className="lang-label">{t('lang')}</span>
+                        </button>
+
+                        <button
                             className="theme-toggle"
                             onClick={toggleTheme}
-                            title={theme === 'dark' ? "Kunduzgi rejim" : "Tungi rejim"}
-                            aria-label="Rejim almashtirish"
+                            title={theme === 'dark' ? t('lightMode') : t('darkMode')}
+                            aria-label="Toggle theme"
                         >
                             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
                         </button>
@@ -128,8 +132,8 @@ export default function Layout() {
                             <button
                                 className="btn-icon"
                                 onClick={logout}
-                                title="Chiqish"
-                                aria-label="Chiqish"
+                                title={t('logout')}
+                                aria-label={t('logout')}
                             >
                                 <LogOut size={17} />
                             </button>
@@ -137,8 +141,11 @@ export default function Layout() {
 
                         <button
                             className="nav-mobile-toggle"
-                            onClick={() => setMenuOpen(v => !v)}
-                            aria-label={menuOpen ? 'Menyuni yopish' : 'Menyuni ochish'}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setMenuOpen(v => !v);
+                            }}
+                            aria-label={menuOpen ? t('closeMenu') : t('openMenu')}
                         >
                             {menuOpen ? <X size={20} /> : <Menu size={20} />}
                         </button>
@@ -146,7 +153,7 @@ export default function Layout() {
                 </div>
             </nav>
 
-            {/* Marquee Banner — below header */}
+            {/* Marquee Banner */}
             <div className="marquee-wrapper">
                 <div className="marquee-track">
                     {[...marqueeItems, ...marqueeItems].map((item, i) => (

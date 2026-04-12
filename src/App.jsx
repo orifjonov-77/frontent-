@@ -1,7 +1,9 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { LangProvider } from './context/LangContext';
+import { ToastProvider } from './context/ToastContext';
 import Layout from './components/Layout';
 import ChatWidget from './components/ChatWidget';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -45,10 +47,25 @@ function AdminRoute({ children }) {
   return children;
 }
 
+// Handle SPA 404 redirect — when 404.html redirects with ?redirect= param
+function RedirectHandler() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const redirectPath = params.get('redirect');
+    if (redirectPath && location.pathname === '/') {
+      navigate(decodeURIComponent(redirectPath), { replace: true });
+    }
+  }, []);
+  return null;
+}
+
 function AppContent() {
   return (
     <div>
       <ErrorBoundary>
+        <RedirectHandler />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route element={<Layout />}>
@@ -79,12 +96,16 @@ export default function App({ onReady }) {
   }, []);
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+    <LangProvider>
+      <ToastProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
+          </AuthProvider>
+        </ThemeProvider>
+      </ToastProvider>
+    </LangProvider>
   );
 }

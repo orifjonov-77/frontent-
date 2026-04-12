@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
 import { coursesAPI } from '../api/client';
 import { Play, Lock, CheckCircle, Clock, FileText, Gamepad2, BookOpen, ArrowLeft, ChevronDown } from 'lucide-react';
+import myLogo from '../assets/mylogo.png';
 import './CoursePage.css';
 
 export default function CoursePage() {
@@ -11,10 +13,9 @@ export default function CoursePage() {
     const [loading, setLoading] = useState(true);
     const [expandedLesson, setExpandedLesson] = useState(null);
     const { user } = useAuth();
+    const { t } = useLang();
 
-    useEffect(() => {
-        loadCourse();
-    }, [courseId]);
+    useEffect(() => { loadCourse(); }, [courseId]);
 
     const loadCourse = async () => {
         try {
@@ -24,12 +25,12 @@ export default function CoursePage() {
         setLoading(false);
     };
 
-    if (loading) return <div className="page-loader"><div className="branded-loader"><img src="/logo.png" alt="MDev" className="branded-loader-logo" /><span className="branded-loader-text">MDev...</span><div className="branded-loader-dots"><span></span><span></span><span></span></div></div></div>;
-    if (!course) return <div className="container"><p>Kurs topilmadi</p></div>;
+    if (loading) return <div className="page-loader"><div className="branded-loader"><img src={myLogo} alt="MDev" className="branded-loader-logo" /><span className="branded-loader-text">MDev...</span><div className="branded-loader-dots"><span></span><span></span><span></span></div></div></div>;
+    if (!course) return <div className="container"><p>{t('courseNotFound')}</p></div>;
 
     return (
         <div className="course-page container animate-fade">
-            <Link to="/modules" className="back-link"><ArrowLeft size={16} /> Modullar</Link>
+            <Link to="/modules" className="back-link"><ArrowLeft size={16} /> {t('backToModules')}</Link>
 
             <div className="course-header">
                 <h1>{course.name}</h1>
@@ -52,10 +53,10 @@ export default function CoursePage() {
                             <div className="lesson-info">
                                 <h3>{lesson.title}</h3>
                                 <div className="lesson-tags">
-                                    {lesson.is_free && <span className="badge badge-success">Bepul</span>}
-                                    {lesson.has_test && <span className="badge badge-info"><FileText size={10} /> Test</span>}
-                                    {lesson.has_game && <span className="badge badge-accent"><Gamepad2 size={10} /> O'yin</span>}
-                                    {lesson.has_homework && <span className="badge badge-warning"><BookOpen size={10} /> Vazifa</span>}
+                                    {lesson.is_free && <span className="badge badge-success">{t('free')}</span>}
+                                    {lesson.has_test && <span className="badge badge-info"><FileText size={10} /> {t('test')}</span>}
+                                    {lesson.has_game && <span className="badge badge-accent"><Gamepad2 size={10} /> {t('game')}</span>}
+                                    {lesson.has_homework && <span className="badge badge-warning"><BookOpen size={10} /> {t('homework')}</span>}
                                 </div>
                             </div>
                             <ChevronDown size={18} className={`expand-icon ${expandedLesson === lesson.id ? 'rotated' : ''}`} />
@@ -67,33 +68,32 @@ export default function CoursePage() {
                                     <>
                                         {lesson.description && <p className="lesson-desc">{lesson.description}</p>}
 
-                                        {/* Progress indicators */}
                                         {lesson.progress && (
                                             <div className="progress-indicators">
                                                 <div className={`indicator ${lesson.progress.video_watched ? 'done' : ''}`}>
-                                                    <Play size={14} /> Video {lesson.progress.video_watched ? '✓' : ''}
+                                                    <Play size={14} /> {t('video')} {lesson.progress.video_watched ? '✓' : ''}
                                                 </div>
                                                 <div className={`indicator ${lesson.progress.test_passed ? 'done' : ''}`}>
-                                                    <FileText size={14} /> Test {lesson.progress.test_passed ? '✓' : ''}
+                                                    <FileText size={14} /> {t('test')} {lesson.progress.test_passed ? '✓' : ''}
                                                 </div>
                                                 <div className={`indicator ${lesson.progress.game_completed ? 'done' : ''}`}>
-                                                    <Gamepad2 size={14} /> O'yin {lesson.progress.game_completed ? '✓' : ''}
+                                                    <Gamepad2 size={14} /> {t('game')} {lesson.progress.game_completed ? '✓' : ''}
                                                 </div>
                                                 <div className={`indicator ${lesson.progress.homework_submitted ? 'done' : ''}`}>
-                                                    <BookOpen size={14} /> Vazifa {lesson.progress.homework_submitted ? '✓' : ''}
+                                                    <BookOpen size={14} /> {t('homework')} {lesson.progress.homework_submitted ? '✓' : ''}
                                                 </div>
                                             </div>
                                         )}
 
                                         <Link to={`/lesson/${lesson.id}`} className="btn btn-primary">
-                                            <Play size={16} /> Darsga o'tish
+                                            <Play size={16} /> {t('goToLesson')}
                                         </Link>
                                     </>
                                 ) : (
                                     <div className="locked-message">
                                         <Lock size={18} />
-                                        <p>Bu darsga kirish uchun to'lov qiling yoki oldingi darslarni tugating</p>
-                                        <Link to={`/payment/${course.module_id}`} className="btn btn-primary btn-sm">To'lash</Link>
+                                        <p>{t('lockedMsg')}</p>
+                                        <Link to={`/payment/${course.module_id}`} className="btn btn-primary btn-sm">{t('pay')}</Link>
                                     </div>
                                 )}
                             </div>

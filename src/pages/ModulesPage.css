@@ -3,6 +3,35 @@
     padding-bottom: 3rem;
 }
 
+/* Error/Empty State */
+.modules-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 1.5rem;
+    gap: 1rem;
+}
+
+.modules-empty-icon {
+    color: var(--text-muted);
+    opacity: 0.5;
+    animation: float 4s ease-in-out infinite;
+}
+
+.modules-empty h3 {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    color: var(--text);
+}
+
+.modules-empty p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    max-width: 350px;
+}
+
 .modules-list {
     display: flex;
     flex-direction: column;

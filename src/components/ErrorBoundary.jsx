@@ -1,7 +1,10 @@
 import { Component } from 'react';
 import { Link } from 'react-router-dom';
+import LangContext from '../context/LangContext';
 
 export default class ErrorBoundary extends Component {
+    static contextType = LangContext;
+
     constructor(props) {
         super(props);
         this.state = { hasError: false, error: null };
@@ -17,6 +20,8 @@ export default class ErrorBoundary extends Component {
 
     render() {
         if (this.state.hasError) {
+            const t = this.context?.t || ((key) => key);
+
             return (
                 <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -25,20 +30,20 @@ export default class ErrorBoundary extends Component {
                 }}>
                     <div style={{ fontSize: '4rem' }}>😕</div>
                     <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem' }}>
-                        Xatolik yuz berdi
+                        {t('errorTitle')}
                     </h2>
                     <p style={{ color: 'var(--text-secondary)', maxWidth: '400px' }}>
-                        Sahifa yuklanishida xatolik. Iltimos, qayta urinib ko'ring yoki bosh sahifaga qayting.
+                        {t('errorDesc')}
                     </p>
                     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                         <button
                             className="btn btn-primary"
                             onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
                         >
-                            🔄 Qayta yuklash
+                            {t('reload')}
                         </button>
                         <Link to="/" className="btn btn-secondary" onClick={() => this.setState({ hasError: false, error: null })}>
-                            🏠 Bosh sahifa
+                            {t('goHome')}
                         </Link>
                     </div>
                 </div>

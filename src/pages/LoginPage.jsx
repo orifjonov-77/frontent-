@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
+import { useToast } from '../context/ToastContext';
 import { authAPI } from '../api/client';
 import { Phone, Key, Loader, ArrowRight, Bot } from 'lucide-react';
 import myLogo from '../assets/mylogo.png';
@@ -17,21 +19,23 @@ export default function LoginPage() {
   const [isNew, setIsNew] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLang();
+  const toast = useToast();
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-      const res = await authAPI.register({
-        phone,
-        full_name: fullName || null,
-      });
+      const res = await authAPI.register({ phone, full_name: fullName || null });
       setBotLink(res.data.bot_link);
       setIsNew(res.data.is_new);
       setStep(2);
+      toast.success(res.data.is_new ? t('registered') : t('welcome'));
     } catch (err) {
-      setError(err.response?.data?.detail || "Xatolik yuz berdi");
+      const msg = err.response?.data?.detail || t('errorOccurred');
+      setError(msg);
+      toast.error(msg);
     }
     setLoading(false);
   };
@@ -43,9 +47,12 @@ export default function LoginPage() {
     try {
       const res = await authAPI.login({ phone, code });
       login(res.data.access_token, res.data.user);
+      toast.success(t('welcome'));
       navigate('/modules');
     } catch (err) {
-      setError(err.response?.data?.detail || "Kod noto'g'ri");
+      const msg = err.response?.data?.detail || t('wrongCode');
+      setError(msg);
+      toast.error(msg);
     }
     setLoading(false);
   };
@@ -53,17 +60,12 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card card">
-
         <div className="login-header">
           <div style={{ minHeight: '50px' }}>
-            <img
-              src={myLogo}
-              alt="MDev"
-              className="login-logo"
-            />
+            <img src={myLogo} alt="MDev" className="login-logo" />
           </div>
-          <h1>MDev Platform</h1>
-          <p>Online ta&apos;lim platformasi</p>
+          <h1>{t('platformTitle')}</h1>
+          <p>{t('platformSubtitle')}</p>
         </div>
 
         {error ? <div className="login-error">{error}</div> : null}
@@ -71,16 +73,16 @@ export default function LoginPage() {
         <div style={{ display: step === 1 ? 'block' : 'none' }}>
           <form onSubmit={handleRegister} className="login-form">
             <div className="form-group">
-              <label><Phone size={14} /> <span>Ismingiz</span></label>
+              <label><Phone size={14} /> <span>{t('yourName')}</span></label>
               <input
                 className="input"
-                placeholder="Ismingiz"
+                placeholder={t('yourName')}
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
               />
             </div>
             <div className="form-group">
-              <label><Phone size={14} /> <span>Telefon raqam</span></label>
+              <label><Phone size={14} /> <span>{t('phoneNumber')}</span></label>
               <input
                 className="input"
                 placeholder="998901234567"
@@ -96,7 +98,7 @@ export default function LoginPage() {
             >
               {loading
                 ? <Loader size={18} className="spin" />
-                : <span><ArrowRight size={18} /> <span>Davom etish</span></span>
+                : <span><ArrowRight size={18} /> <span>{t('continue')}</span></span>
               }
             </button>
           </form>
@@ -106,11 +108,11 @@ export default function LoginPage() {
           <div className="login-step2">
             <div className="bot-instructions">
               <Bot size={32} className="bot-icon" />
-              <h3>{isNew ? "Ro'yxatdan o'tdingiz!" : "Xush kelibsiz!"}</h3>
-              <p>1. Quyidagi tugmani bosib botga o&apos;ting</p>
-              <p>2. Telefon raqamingizni yuboring</p>
-              <p>3. Bot sizga 6 raqamli kod beradi</p>
-              <p>4. Kodni pastga kiriting</p>
+              <h3>{isNew ? t('registered') : t('welcome')}</h3>
+              <p>{t('botStep1')}</p>
+              <p>{t('botStep2')}</p>
+              <p>{t('botStep3')}</p>
+              <p>{t('botStep4')}</p>
               <a
                 href={botLink}
                 target="_blank"
@@ -118,13 +120,13 @@ export default function LoginPage() {
                 className="btn btn-accent btn-lg"
                 style={{ width: '100%' }}
               >
-                <Bot size={18} /> <span>Telegram Botga o&apos;tish</span>
+                <Bot size={18} /> <span>{t('goToBot')}</span>
               </a>
             </div>
 
             <form onSubmit={handleLogin} className="login-form">
               <div className="form-group">
-                <label><Key size={14} /> <span>Kodni kiriting</span></label>
+                <label><Key size={14} /> <span>{t('enterCode')}</span></label>
                 <input
                   className="input code-input"
                   placeholder="123456"
@@ -141,7 +143,7 @@ export default function LoginPage() {
               >
                 {loading
                   ? <Loader size={18} className="spin" />
-                  : <span><Key size={18} /> <span>Kirish</span></span>
+                  : <span><Key size={18} /> <span>{t('login')}</span></span>
                 }
               </button>
               <button
@@ -150,7 +152,7 @@ export default function LoginPage() {
                 style={{ width: '100%' }}
                 onClick={() => { setStep(1); setError(''); }}
               >
-                <span>← Orqaga</span>
+                <span>{t('back')}</span>
               </button>
             </form>
           </div>

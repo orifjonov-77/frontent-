@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
+import { useToast } from '../context/ToastContext';
 import { profileAPI } from '../api/client';
 import { User, Save, Loader } from 'lucide-react';
 import './ProfilePage.css';
 
 export default function ProfilePage() {
     const { user, setUser } = useAuth();
+    const { t } = useLang();
+    const toast = useToast();
     const [fullName, setFullName] = useState(user?.full_name || '');
     const [bio, setBio] = useState(user?.bio || '');
     const [saving, setSaving] = useState(false);
-    const [msg, setMsg] = useState('');
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -17,9 +20,9 @@ export default function ProfilePage() {
         try {
             const res = await profileAPI.update({ full_name: fullName, bio });
             setUser(res.data);
-            setMsg("Profil yangilandi!");
+            toast.success(t('profileUpdated'));
         } catch (err) {
-            setMsg(err.response?.data?.detail || 'Xatolik');
+            toast.error(err.response?.data?.detail || t('errorOccurred'));
         }
         setSaving(false);
     };
@@ -37,19 +40,17 @@ export default function ProfilePage() {
                         <span className={`badge ${user?.role === 'admin' ? 'badge-accent' : 'badge-info'}`}>{user?.role}</span>
                     </div>
 
-                    {msg && <div className="profile-msg">{msg}</div>}
-
                     <form onSubmit={handleSave} className="profile-form">
                         <div className="form-group">
-                            <label>To'liq ism</label>
+                            <label>{t('fullName')}</label>
                             <input className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
                         </div>
                         <div className="form-group">
-                            <label>Bio</label>
-                            <textarea className="input" rows={3} value={bio} onChange={(e) => setBio(e.target.value)} placeholder="O'zingiz haqingizda..." />
+                            <label>{t('bio')}</label>
+                            <textarea className="input" rows={3} value={bio} onChange={(e) => setBio(e.target.value)} placeholder={t('bioPlaceholder')} />
                         </div>
                         <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={saving}>
-                            {saving ? <Loader size={18} className="spin" /> : <><Save size={18} /> Saqlash</>}
+                            {saving ? <Loader size={18} className="spin" /> : <><Save size={18} /> {t('save')}</>}
                         </button>
                     </form>
                 </div>

@@ -1,32 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, Code, Monitor, Scissors, ArrowRight, Users, Award, Zap, Shield, Star, ChevronRight } from 'lucide-react';
+import { useLang } from '../context/LangContext';
+import { BookOpen, Code, Monitor, Scissors, ArrowRight, Users, Award, Zap, ChevronRight } from 'lucide-react';
+import myLogo from '../assets/mylogo.png';
 import './HomePage.css';
 
-// Typewriter component — letter-by-letter animation
+// Typewriter
 function Typewriter({ text, delay = 40, className = '' }) {
   const [visibleCount, setVisibleCount] = useState(0);
   const letters = text.split('');
 
   useEffect(() => {
     setVisibleCount(0);
-    const timers = [];
-    letters.forEach((_, i) => {
-      const t = setTimeout(() => setVisibleCount(i + 1), i * delay);
-      timers.push(t);
-    });
+    const timers = letters.map((_, i) => setTimeout(() => setVisibleCount(i + 1), i * delay));
     return () => timers.forEach(clearTimeout);
   }, [text, delay]);
 
   return (
     <span className={className}>
       {letters.slice(0, visibleCount).map((char, i) => (
-        <span
-          key={`${text}-${i}`}
-          className="typewriter-char"
-          style={{ animationDelay: `0ms` }}
-        >
+        <span key={`${text}-${i}`} className="typewriter-char" style={{ animationDelay: '0ms' }}>
           {char === ' ' ? '\u00A0' : char}
         </span>
       ))}
@@ -49,12 +43,8 @@ function AnimatedCount({ target, suffix = '' }) {
           const step = Math.ceil(target / 30);
           const timer = setInterval(() => {
             current += step;
-            if (current >= target) {
-              setCount(target);
-              clearInterval(timer);
-            } else {
-              setCount(current);
-            }
+            if (current >= target) { setCount(target); clearInterval(timer); }
+            else setCount(current);
           }, 30);
         }
       },
@@ -67,7 +57,6 @@ function AnimatedCount({ target, suffix = '' }) {
   return <strong ref={ref}>{count}{suffix}</strong>;
 }
 
-// Tech marquee items
 const techItems = [
   'HTML', 'CSS', 'JavaScript', 'React', 'Python', 'FastAPI',
   'Word', 'Excel', 'PowerPoint', 'Canva', 'CapCut', 'Premiere Pro',
@@ -76,11 +65,12 @@ const techItems = [
 
 export default function HomePage() {
   const { user } = useAuth();
+  const { t } = useLang();
 
   const modules = [
-    { icon: <Monitor size={32} />, title: "Kompyuter savodxonligi", desc: "Word, Excel, PowerPoint, Canva asoslari", price: "100,000", color: "#10b981", emoji: "💻" },
-    { icon: <Code size={32} />, title: "Dasturlash", desc: "HTML, CSS, JS, React, Python, FastAPI", price: "130,000", color: "#6c5ce7", emoji: "⚡" },
-    { icon: <Scissors size={32} />, title: "Montaj", desc: "CapCut, Premiere Pro, video montaj", price: "90,000", color: "#f59e0b", emoji: "🎬" },
+    { icon: <Monitor size={32} />, title: t('compLit'), desc: t('compLitDesc'), price: "100,000", color: "#10b981" },
+    { icon: <Code size={32} />, title: t('programming'), desc: t('progDesc'), price: "130,000", color: "#6c5ce7" },
+    { icon: <Scissors size={32} />, title: t('editing'), desc: t('editDesc'), price: "90,000", color: "#f59e0b" },
   ];
 
   return (
@@ -95,32 +85,29 @@ export default function HomePage() {
         <div className="container">
           <div className="hero-content">
             <div className="hero-badge">
-              <Zap size={14} /> Online ta'lim platformasi
+              <Zap size={14} /> {t('heroBadge')}
             </div>
             <h1 className="hero-title">
-              <Typewriter text="Professional " delay={50} />
+              <Typewriter text={t('heroTitle1')} delay={50} />
               <span className="gradient-text">
-                <Typewriter text="IT ko'nikmalarni" delay={50} />
+                <Typewriter text={t('heroTitle2')} delay={50} />
               </span>
               <br />
-              <Typewriter text="o'rganishni boshlang" delay={50} />
+              <Typewriter text={t('heroTitle3')} delay={50} />
             </h1>
-            <p className="hero-desc">
-              Kompyuter savodxonligi, dasturlash va montaj bo'yicha sifatli video darslar.
-              Testlar, vazifalar va interaktiv mashqlar bilan bilimingizni mustahkamlang.
-            </p>
+            <p className="hero-desc">{t('heroDesc')}</p>
             <div className="hero-actions">
               {user ? (
                 <Link to="/modules" className="btn btn-primary btn-lg hero-btn-pulse">
-                  Darslarga o'tish <ArrowRight size={18} />
+                  {t('goToLessons')} <ArrowRight size={18} />
                 </Link>
               ) : (
                 <Link to="/login" className="btn btn-primary btn-lg hero-btn-pulse">
-                  Boshlash <ArrowRight size={18} />
+                  {t('start')} <ArrowRight size={18} />
                 </Link>
               )}
               <Link to="/rating" className="btn btn-secondary btn-lg">
-                Reyting ko'rish
+                {t('viewRating')}
               </Link>
             </div>
           </div>
@@ -128,15 +115,15 @@ export default function HomePage() {
           <div className="hero-stats scroll-animate">
             <div className="stat-item">
               <BookOpen size={24} className="stat-icon" />
-              <div><AnimatedCount target={3} /><span>Modul</span></div>
+              <div><AnimatedCount target={3} /><span>{t('module')}</span></div>
             </div>
             <div className="stat-item">
               <Users size={24} className="stat-icon" />
-              <div><AnimatedCount target={100} suffix="+" /><span>O'quvchilar</span></div>
+              <div><AnimatedCount target={100} suffix="+" /><span>{t('students')}</span></div>
             </div>
             <div className="stat-item">
               <Award size={24} className="stat-icon" />
-              <div><strong>24/7</strong><span>Qo'llab-quvvatlash</span></div>
+              <div><strong>24/7</strong><span>{t('support247')}</span></div>
             </div>
           </div>
         </div>
@@ -157,9 +144,8 @@ export default function HomePage() {
       {/* Modules */}
       <section className="modules-section">
         <div className="container">
-          <h2 className="section-title scroll-animate">Bizning modullar</h2>
-          <p className="section-desc scroll-animate">Har bir modul professional darajada tayyorlangan</p>
-
+          <h2 className="section-title scroll-animate">{t('ourModules')}</h2>
+          <p className="section-desc scroll-animate">{t('modulesSubtitle')}</p>
           <div className="modules-grid stagger-children">
             {modules.map((m, i) => (
               <div key={i} className="module-card card">
@@ -171,10 +157,10 @@ export default function HomePage() {
                 <p>{m.desc}</p>
                 <div className="module-price">
                   <span className="price-amount">{m.price}</span>
-                  <span className="price-label">so'm</span>
+                  <span className="price-label"> {t('som')}</span>
                 </div>
                 <Link to="/modules" className="btn btn-secondary" style={{ width: '100%' }}>
-                  Batafsil <ArrowRight size={16} />
+                  {t('details')} <ArrowRight size={16} />
                 </Link>
               </div>
             ))}
@@ -185,15 +171,15 @@ export default function HomePage() {
       {/* Features */}
       <section className="features-section">
         <div className="container">
-          <h2 className="section-title scroll-animate">Nima uchun bizni tanlashadi?</h2>
+          <h2 className="section-title scroll-animate">{t('whyChooseUs')}</h2>
           <div className="features-grid stagger-children">
             {[
-              { icon: "📹", title: "Video darslar", desc: "Professional sifatli video darslar" },
-              { icon: "📝", title: "Testlar", desc: "Har darsda 10 ta test savol (7 daqiqa)" },
-              { icon: "🎮", title: "O'yin misollari", desc: "Interaktiv mashq va misollar" },
-              { icon: "📋", title: "Vazifalar", desc: "Amaliy topshiriqlar va uy vazifalari" },
-              { icon: "🏆", title: "Reyting", desc: "O'quvchilar o'rtasida raqobat" },
-              { icon: "📊", title: "Imtihonlar", desc: "Har 12 darsda imtihon" },
+              { icon: "📹", title: t('videoLessons'), desc: t('videoLessonsDesc') },
+              { icon: "📝", title: t('tests'), desc: t('testsDesc') },
+              { icon: "🎮", title: t('games'), desc: t('gamesDesc') },
+              { icon: "📋", title: t('tasks'), desc: t('tasksDesc') },
+              { icon: "🏆", title: t('ratingTitle'), desc: t('ratingDesc') },
+              { icon: "📊", title: t('exams'), desc: t('examsDesc') },
             ].map((f, i) => (
               <div key={i} className="feature-item card">
                 <span className="feature-emoji">{f.icon}</span>
@@ -208,13 +194,13 @@ export default function HomePage() {
       {/* How It Works */}
       <section className="how-section">
         <div className="container">
-          <h2 className="section-title scroll-animate">Qanday ishlaydi?</h2>
+          <h2 className="section-title scroll-animate">{t('howItWorks')}</h2>
           <div className="how-steps stagger-children">
             {[
-              { num: "01", icon: "📝", title: "Ro'yxatdan o'ting", desc: "Telefon raqamingizni kiriting va Telegram bot orqali tasdiqlang" },
-              { num: "02", icon: "💳", title: "Modulni tanlang", desc: "O'zingizga mos modulni tanlab, to'lov qiling" },
-              { num: "03", icon: "📹", title: "Video darslarni ko'ring", desc: "Professional video darslarni tomosha qilib o'rganing" },
-              { num: "04", icon: "🏆", title: "Natijaga erishing", desc: "Test va vazifalarni bajaring, sertifikat oling" },
+              { num: "01", icon: "📝", title: t('step1'), desc: t('step1Desc') },
+              { num: "02", icon: "💳", title: t('step2'), desc: t('step2Desc') },
+              { num: "03", icon: "📹", title: t('step3'), desc: t('step3Desc') },
+              { num: "04", icon: "🏆", title: t('step4'), desc: t('step4Desc') },
             ].map((s, i) => (
               <div key={i} className="how-step card">
                 <div className="how-step-num">{s.num}</div>
@@ -227,21 +213,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA */}
       <section className="cta-section">
         <div className="container">
           <div className="cta-card">
             <div className="cta-content scroll-animate">
-              <h2>Hoziroq boshlang!</h2>
-              <p>Professional IT ko'nikmalarni egallash uchun birinchi qadamni tashlang</p>
+              <h2>{t('startNow')}</h2>
+              <p>{t('ctaDesc')}</p>
               <div className="cta-actions">
                 {user ? (
                   <Link to="/modules" className="btn btn-primary btn-lg">
-                    Darslarga o'tish <ChevronRight size={18} />
+                    {t('goToLessons')} <ChevronRight size={18} />
                   </Link>
                 ) : (
                   <Link to="/login" className="btn btn-primary btn-lg">
-                    Bepul ro'yxatdan o'tish <ChevronRight size={18} />
+                    {t('freeRegister')} <ChevronRight size={18} />
                   </Link>
                 )}
               </div>
@@ -255,13 +241,16 @@ export default function HomePage() {
         <div className="container">
           <div className="footer-content">
             <div className="footer-brand">
-              <h3>MDev Platform</h3>
-              <p>Online ta'lim platformasi — Professional IT ko'nikmalar</p>
+              <div className="footer-logo-row">
+                <img src={myLogo} alt="MDev" className="footer-logo-img" />
+                <h3>{t('platformTitle')}</h3>
+              </div>
+              <p>{t('footerDesc')}</p>
             </div>
             <div className="footer-links">
-              <Link to="/modules">Modullar</Link>
-              <Link to="/rating">Reyting</Link>
-              <Link to="/terms">Qoidalar</Link>
+              <Link to="/modules">{t('modules')}</Link>
+              <Link to="/rating">{t('rating')}</Link>
+              <Link to="/terms">{t('rules')}</Link>
             </div>
             <div className="footer-contact">
               <p>📞 +998889810206</p>
@@ -269,7 +258,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="footer-bottom">
-            <p>© 2024 MDev Platform. Barcha huquqlar himoyalangan.</p>
+            <p>{t('allRights')}</p>
           </div>
         </div>
       </footer>

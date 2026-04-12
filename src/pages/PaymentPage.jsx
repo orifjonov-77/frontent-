@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
+import { useToast } from '../context/ToastContext';
 import { paymentsAPI, coursesAPI } from '../api/client';
 import { getModulePrice } from '../config/prices';
 import { CreditCard, Upload, Loader, CheckCircle, AlertCircle, ArrowLeft, Clock, Image, Copy, Check, ShieldCheck, ArrowRight } from 'lucide-react';
+import myLogo from '../assets/mylogo.png';
 import './PaymentPage.css';
 
 export default function PaymentPage() {
     const { moduleId } = useParams();
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { t } = useLang();
+    const toast = useToast();
     const [cardInfo, setCardInfo] = useState(null);
     const [modules, setModules] = useState([]);
     const [selectedModule, setSelectedModule] = useState(null);
@@ -20,9 +25,7 @@ export default function PaymentPage() {
     const [result, setResult] = useState(null);
     const [copied, setCopied] = useState(false);
 
-    useEffect(() => {
-        loadData();
-    }, [moduleId]);
+    useEffect(() => { loadData(); }, [moduleId]);
 
     const loadData = async () => {
         try {
@@ -53,6 +56,7 @@ export default function PaymentPage() {
         try {
             await navigator.clipboard.writeText(cardInfo.card_number.replace(/\s/g, ''));
             setCopied(true);
+            toast.success(t('copyCard') + ' ✓');
             setTimeout(() => setCopied(false), 2000);
         } catch { }
     };
@@ -72,12 +76,14 @@ export default function PaymentPage() {
             const data = res.data;
             setResult({
                 success: true,
-                message: data.message || "✅ To'lov cheki yuborildi! Admin tekshirib tasdiqlagandan so'ng kurslar ochiladi.",
+                message: data.message || "✅ " + t('paymentSent'),
                 aiComment: data.ai_comment
             });
+            toast.success(t('paymentSent'));
         } catch (err) {
-            const detail = err.response?.data?.detail || 'Xatolik yuz berdi';
+            const detail = err.response?.data?.detail || t('errorOccurred');
             setResult({ success: false, message: detail });
+            toast.error(detail);
         }
         setSubmitting(false);
     };
@@ -86,7 +92,7 @@ export default function PaymentPage() {
     if (loading) return (
         <div className="page-loader">
             <div className="branded-loader">
-                <img src="/logo.png" alt="MDev" className="branded-loader-logo" />
+                <img src={myLogo} alt="MDev" className="branded-loader-logo" />
                 <span className="branded-loader-text">MDev...</span>
                 <div className="branded-loader-dots"><span></span><span></span><span></span></div>
             </div>
@@ -95,60 +101,58 @@ export default function PaymentPage() {
 
     return (
         <div className="payment-page container animate-fade">
-            <button onClick={() => navigate(-1)} className="back-link"><ArrowLeft size={16} /> Orqaga</button>
+            <button onClick={() => navigate(-1)} className="back-link"><ArrowLeft size={16} /> {t('backBtn')}</button>
 
             <div className="payment-wrapper">
-                {/* Stepper */}
                 <div className="payment-stepper">
                     <div className={`step ${!result ? 'active' : 'done'}`}>
                         <div className="step-num">{!result ? '1' : <Check size={14} />}</div>
-                        <span>Pul o'tkazing</span>
+                        <span>{t('step1Pay')}</span>
                     </div>
                     <div className="step-line" />
                     <div className={`step ${!result ? '' : 'active'}`}>
                         <div className="step-num">2</div>
-                        <span>Chek yuklang</span>
+                        <span>{t('step2Upload')}</span>
                     </div>
                     <div className="step-line" />
                     <div className="step">
                         <div className="step-num">3</div>
-                        <span>Admin tasdiqlaydi</span>
+                        <span>{t('step3Admin')}</span>
                     </div>
                 </div>
 
                 <div className="payment-card card">
-                    <h1><CreditCard size={24} /> To'lov</h1>
+                    <h1><CreditCard size={24} /> {t('payment')}</h1>
                     {selectedModule && (
                         <div className="module-info-pay">
                             <div className="module-pay-icon">💳</div>
                             <h3>{selectedModule.name}</h3>
-                            <p className="price">{getModulePrice(selectedModule.name, selectedModule.price).toLocaleString()} so'm</p>
+                            <p className="price">{getModulePrice(selectedModule.name, selectedModule.price).toLocaleString()} {t('som')}</p>
                         </div>
                     )}
 
-                    {/* Card Info */}
                     {cardInfo && (
                         <div className="card-info-box">
-                            <h4>💳 Karta ma'lumotlari</h4>
+                            <h4>💳 {t('cardInfo')}</h4>
                             <div className="card-detail card-number-row">
-                                <span>Karta raqam:</span>
+                                <span>{t('cardNumber')}:</span>
                                 <div className="card-number-copy">
                                     <strong>{cardInfo.card_number}</strong>
-                                    <button className="copy-btn" onClick={handleCopyCard} title="Nusxa olish">
+                                    <button className="copy-btn" onClick={handleCopyCard} title={t('copyCard')}>
                                         {copied ? <Check size={14} className="copy-done" /> : <Copy size={14} />}
                                     </button>
                                 </div>
                             </div>
                             <div className="card-detail">
-                                <span>Egasi:</span>
+                                <span>{t('cardHolder')}:</span>
                                 <strong>{cardInfo.card_holder}</strong>
                             </div>
                             <div className="card-detail">
-                                <span>Muddat:</span>
+                                <span>{t('cardExpiry')}:</span>
                                 <strong>{cardInfo.card_expiry}</strong>
                             </div>
                             <p className="card-note">
-                                <ShieldCheck size={14} /> Yuqoridagi kartaga pul o'tkazing va chek skrinshotini yuklang
+                                <ShieldCheck size={14} /> {t('cardNote')}
                             </p>
                         </div>
                     )}
@@ -158,21 +162,21 @@ export default function PaymentPage() {
                             {result.success ? <Clock size={36} /> : <AlertCircle size={36} />}
                             <p className="result-msg">{result.message}</p>
                             {result.aiComment && (
-                                <p className="ai-comment">🤖 AI izoh: {result.aiComment}</p>
+                                <p className="ai-comment">🤖 AI: {result.aiComment}</p>
                             )}
                             <div className="result-actions">
                                 <button onClick={() => navigate('/modules')} className="btn btn-primary">
-                                    Modullarga qaytish <ArrowRight size={16} />
+                                    {t('backToModulesBtn')} <ArrowRight size={16} />
                                 </button>
                                 <button onClick={() => { setResult(null); setFile(null); setPreview(null); }} className="btn btn-secondary">
-                                    Yana yuklash
+                                    {t('uploadAgain')}
                                 </button>
                             </div>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="upload-form">
                             <div className="form-group">
-                                <label>To'lov cheki (screenshot)</label>
+                                <label>{t('receiptLabel')}</label>
                                 <div className={`file-upload ${preview ? 'has-file' : ''}`}>
                                     <input type="file" accept="image/*" onChange={handleFileChange} required />
                                     <div className="file-label">
@@ -183,8 +187,8 @@ export default function PaymentPage() {
                                                 <div className="upload-icon-wrapper">
                                                     <Upload size={28} />
                                                 </div>
-                                                <span className="upload-text">Rasmni tanlang yoki bu yerga tashlang</span>
-                                                <span className="upload-hint">PNG, JPG, WEBP — 10MB gacha</span>
+                                                <span className="upload-text">{t('selectImage')}</span>
+                                                <span className="upload-hint">{t('imageHint')}</span>
                                             </>
                                         )}
                                     </div>
@@ -193,9 +197,9 @@ export default function PaymentPage() {
                             </div>
                             <button type="submit" className="btn btn-primary btn-lg submit-btn" disabled={submitting || !file}>
                                 {submitting ? (
-                                    <><Loader size={18} className="spin" /> Yuborilmoqda...</>
+                                    <><Loader size={18} className="spin" /> {t('submitting')}</>
                                 ) : (
-                                    <><Upload size={18} /> Chekni yuborish</>
+                                    <><Upload size={18} /> {t('submitReceipt')}</>
                                 )}
                             </button>
                         </form>

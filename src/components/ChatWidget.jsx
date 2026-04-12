@@ -1,19 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
+import { useToast } from '../context/ToastContext';
 import { chatAPI } from '../api/client';
 import { MessageCircle, X, Send, Loader, Bot, User, Sparkles } from 'lucide-react';
 import './ChatWidget.css';
 
-const QUICK_QUESTIONS = [
-    "Kurslar narxi qancha?",
-    "To'lov qanday qilinadi?",
-    "Dars ochilmayapti",
-    "Dasturlash kursi haqida",
-    "Sertifikat qanday olinadi?",
-];
-
 export default function ChatWidget() {
     const { user } = useAuth();
+    const { t } = useLang();
+    const toast = useToast();
     const [open, setOpen] = useState(false);
     const [msgs, setMsgs] = useState([]);
     const [text, setText] = useState('');
@@ -22,6 +18,8 @@ export default function ChatWidget() {
     const [typing, setTyping] = useState(false);
     const endRef = useRef(null);
     const inputRef = useRef(null);
+
+    const QUICK_QUESTIONS = [t('q1'), t('q2'), t('q3'), t('q4'), t('q5')];
 
     useEffect(() => {
         if (!user || open) return;
@@ -96,10 +94,11 @@ export default function ChatWidget() {
                 is_mine: false,
                 is_from_admin: true,
                 sender_id: 0,
-                message: "Xabar yuborilmadi. Qaytadan urinib ko'ring.",
+                message: t('sendFailed'),
                 created_at: new Date().toISOString(),
             }]);
             setTyping(false);
+            toast.error(t('sendFailed'));
         }
         setSending(false);
     };
@@ -117,7 +116,7 @@ export default function ChatWidget() {
 
     return (
         <div className="chat-widget-wrapper">
-            <button className="chat-fab" onClick={toggleChat} aria-label="Chat">
+            <button className="chat-fab" onClick={toggleChat} aria-label={t('chat')}>
                 {open ? <X size={22} /> : <MessageCircle size={22} />}
                 {unread > 0 && !open && (
                     <span className="chat-badge">{unread > 9 ? '9+' : unread}</span>
@@ -125,36 +124,34 @@ export default function ChatWidget() {
             </button>
 
             {open && (
-                <div className="chat-window" role="dialog" aria-label="Chat oynasi">
-                    {/* Header */}
+                <div className="chat-window" role="dialog" aria-label={t('chat')}>
                     <div className="chat-header">
                         <div className="chat-header-avatar">
                             <Bot size={18} />
                         </div>
                         <div>
-                            <h4>MDev AI Yordamchi</h4>
+                            <h4>{t('chatTitle')}</h4>
                             <span className="chat-status">
                                 {typing ? (
-                                    <>✍️ Yozmoqda...</>
+                                    <>{t('typing')}</>
                                 ) : (
-                                    <><span className="chat-status-dot" /> Online</>
+                                    <><span className="chat-status-dot" /> {t('online')}</>
                                 )}
                             </span>
                         </div>
-                        <button className="chat-header-close" onClick={closeChat} aria-label="Yopish">
+                        <button className="chat-header-close" onClick={closeChat} aria-label={t('close')}>
                             <X size={15} />
                         </button>
                     </div>
 
-                    {/* Messages */}
                     <div className="chat-messages">
                         {msgs.length === 0 && (
                             <div className="chat-empty">
                                 <div className="chat-empty-icon">
                                     <Sparkles size={24} />
                                 </div>
-                                <h4>Salom! 👋</h4>
-                                <p>Men MDev AI yordamchiman. Savollaringizga javob beraman!</p>
+                                <h4>{t('chatHello')}</h4>
+                                <p>{t('chatDesc')}</p>
                             </div>
                         )}
 
@@ -190,7 +187,6 @@ export default function ChatWidget() {
                         <div ref={endRef} />
                     </div>
 
-                    {/* Quick questions */}
                     {msgs.length === 0 && (
                         <div className="chat-quick">
                             {QUICK_QUESTIONS.map((q, i) => (
@@ -201,12 +197,11 @@ export default function ChatWidget() {
                         </div>
                     )}
 
-                    {/* Input */}
                     <div className="chat-input-row">
                         <input
                             ref={inputRef}
                             className="chat-input"
-                            placeholder="Xabar yozing..."
+                            placeholder={t('typeMessage')}
                             value={text}
                             onChange={e => setText(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
@@ -217,7 +212,7 @@ export default function ChatWidget() {
                             className="chat-send"
                             onClick={() => handleSend()}
                             disabled={sending || !text.trim()}
-                            aria-label="Yuborish"
+                            aria-label={t('send')}
                         >
                             {sending ? <Loader size={17} className="spin" /> : <Send size={17} />}
                         </button>
