@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../api/client';
 import { Phone, Key, Loader, ArrowRight, Bot } from 'lucide-react';
+import myLogo from '../assets/mylogo.png';
 import './LoginPage.css';
 
 export default function LoginPage() {
@@ -14,7 +15,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [botLink, setBotLink] = useState('');
   const [isNew, setIsNew] = useState(false);
-  const [logoError, setLogoError] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -57,11 +57,9 @@ export default function LoginPage() {
         <div className="login-header">
           <div style={{ minHeight: '50px' }}>
             <img
-              src="/assets/mylogo.png"
+              src={myLogo}
               alt="MDev"
               className="login-logo"
-              style={{ display: logoError ? 'none' : 'block' }}
-              onError={() => setLogoError(true)}
             />
           </div>
           <h1>MDev Platform</h1>

@@ -1,60 +1,16 @@
+/* ====== COURSES PAGE ====== */
 .courses-page {
-  padding: 0.5rem 0 2rem;
+  padding-bottom: 3rem;
 }
 
-.page-title {
-  margin: 0 0 1.25rem;
-  font-size: 1.75rem;
-}
-
-.category-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.category-tabs button {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.category-tabs button:hover {
-  color: var(--text);
-  border-color: var(--text-muted);
-}
-
-.category-tabs button.active {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: var(--accent);
-}
-
-.course-grid {
+.courses-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1.25rem;
 }
 
-.empty {
-  grid-column: 1 / -1;
-  color: var(--text-muted);
-  text-align: center;
-  padding: 2rem;
-}
-
-.page-loading,
-.page-error {
-  text-align: center;
-  padding: 2rem;
-  color: var(--text-muted);
-}
-
-.page-error {
-  color: var(--error, #c53030);
+@media (max-width: 480px) {
+  .courses-list {
+    grid-template-columns: 1fr;
+  }
 }

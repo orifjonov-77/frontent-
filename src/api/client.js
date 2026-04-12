@@ -5,6 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 15000,
 });
 
 // In-memory GET cache (60 sekund — tezlik uchun)
@@ -174,7 +175,7 @@ export const adminAPI = {
   gradeHomework: (id, data) => api.patch(`/admin/homework/submissions/${id}/grade`, data),
   createExam: (data) => api.post('/admin/exams', data),
   deleteExam: (id) => api.delete(`/admin/exams/${id}`),
-  getPayments: (status) => api.get('/admin/payments', { params: status ? { status } : {} }),
+  getPayments: (status) => api.get('/admin/payments', { params: { ...(status ? { status } : {}), _t: Date.now() } }),
   reviewPayment: (id, data) => api.patch(`/admin/payments/${id}/review`, data),
   grantCourse: (userId, courseId) => api.post(`/admin/grant-course?user_id=${userId}&course_id=${courseId}`),
   getCertificates: () => api.get('/admin/certificates'),

@@ -516,13 +516,14 @@ export default function AdminPage() {
                                                             <div className="profit-bar-track">
                                                                 <div
                                                                     className="profit-bar-fill"
+                                                                    data-percent={`${Math.round((m.revenue / paymentStats.maxRevenue) * 100)}%`}
                                                                     style={{
-                                                                        '--target-width': `${(m.revenue / paymentStats.maxRevenue) * 100}%`,
+                                                                        '--target-width': `${Math.max((m.revenue / paymentStats.maxRevenue) * 100, 8)}%`,
                                                                         animationDelay: `${0.3 + i * 0.15}s`
                                                                     }}
                                                                 ></div>
                                                             </div>
-                                                            <span className="profit-bar-count">{m.count} ta</span>
+                                                            <span className="profit-bar-count">{m.count} ta to'lov</span>
                                                         </div>
                                                     ))}
                                                 </div>

@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import ChatWidget from './components/ChatWidget';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy load pages for better performance
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -47,24 +48,26 @@ function AdminRoute({ children }) {
 function AppContent() {
   return (
     <div>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/modules" element={<ModulesPage />} />
-            <Route path="/rating" element={<RatingPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/course/:courseId" element={<ProtectedRoute><CoursePage /></ProtectedRoute>} />
-            <Route path="/lesson/:lessonId" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
-            <Route path="/payment/:moduleId" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/results" element={<ProtectedRoute><ResultsPage /></ProtectedRoute>} />
-            <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Route>
-        </Routes>
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/modules" element={<ModulesPage />} />
+              <Route path="/rating" element={<RatingPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/course/:courseId" element={<ProtectedRoute><CoursePage /></ProtectedRoute>} />
+              <Route path="/lesson/:lessonId" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
+              <Route path="/payment/:moduleId" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/results" element={<ProtectedRoute><ResultsPage /></ProtectedRoute>} />
+              <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
       <ChatWidget />
     </div>
   );
