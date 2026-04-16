@@ -4,7 +4,8 @@
 .hero {
   padding: 3rem 0 2rem;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  background: transparent;
 }
 
 /* Floating Orbs */
@@ -184,7 +185,7 @@
 .tech-marquee-section {
   overflow: hidden;
   padding: 1.5rem 0;
-  background: var(--gradient-subtle);
+  background: transparent;
   border-top: 1px solid var(--border-light);
   border-bottom: 1px solid var(--border-light);
 }
@@ -496,7 +497,9 @@
 .site-footer {
   padding: 2.5rem 0 1rem;
   border-top: 1px solid var(--border);
-  background: var(--bg-card);
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   margin-top: 2rem;
 }
 

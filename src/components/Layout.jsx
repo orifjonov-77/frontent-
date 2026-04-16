@@ -8,6 +8,7 @@ import {
     Sun, Moon, Menu, X, LogOut, FileText, Globe
 } from 'lucide-react';
 import myLogo from '../assets/mylogo.png';
+import AnimatedBackground from './AnimatedBackground';
 import './Layout.css';
 
 export default function Layout() {
@@ -68,6 +69,7 @@ export default function Layout() {
 
     return (
         <div>
+            <AnimatedBackground />
             <nav className="nav">
                 <div className="nav-inner">
                     <Link to="/" className="nav-logo">
