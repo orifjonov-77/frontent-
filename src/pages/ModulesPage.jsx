@@ -90,6 +90,12 @@ export default function ModulesPage() {
                                     <div className="module-info">
                                         <h2>{m.name}</h2>
                                         <p>{m.description}</p>
+                                        <div className="module-stats">
+                                            <span className="module-lessons-badge">
+                                                <Layers size={13} />
+                                                {m.courses?.reduce((sum, c) => sum + (c.lessons_count || 0), 0)} {t('lesson')}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 
