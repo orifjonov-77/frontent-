@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { adminAPI, coursesAPI, clearApiCache } from '../api/client';
 import {
     LayoutDashboard, Users, BookOpen, FileText, CreditCard, Gamepad2, Award,
-    Plus, Trash2, Check, X, Eye, Loader, Send, Edit3, ChevronDown, ChevronRight,
+    Plus, Trash2, Check, X, Eye, EyeOff, Loader, Send, Edit3, ChevronDown, ChevronRight, ChevronUp,
     Layers, FolderOpen, PlayCircle, Save, RefreshCw, AlertCircle, Search,
     MessageCircle, ArrowLeft, ExternalLink, TrendingUp, BarChart3, DollarSign,
     Clock, CheckCircle, XCircle, Activity
@@ -89,6 +89,10 @@ export default function AdminPage() {
 
     // Payment statistics
     const [paymentStats, setPaymentStats] = useState(null);
+
+    // Toggle visibility for dashboard sections
+    const [showPayments, setShowPayments] = useState(true);
+    const [showStudents, setShowStudents] = useState(true);
 
     useEffect(() => {
         if (!isAdmin) { navigate('/'); return; }
@@ -427,35 +431,98 @@ export default function AdminPage() {
                             <div className="dashboard-stats">
                                 {/* Hero Stat Cards */}
                                 <div className="hero-stats stagger-children">
-                                    <div className="hero-stat-card hero-stat-primary">
+                                    {/* O'quvchilar soni — toggle */}
+                                    <div className={`hero-stat-card hero-stat-primary ${!showStudents ? 'hero-stat-hidden' : ''}`}
+                                        onClick={() => setShowStudents(prev => !prev)}
+                                        style={{ cursor: 'pointer' }}>
                                         <div className="hero-stat-icon"><Users size={22} /></div>
                                         <div className="hero-stat-content">
-                                            <span className="hero-stat-value">{data.total_students}</span>
-                                            <span className="hero-stat-label">Jami o'quvchilar</span>
+                                            {showStudents ? (
+                                                <>
+                                                    <span className="hero-stat-value">{data.total_students}</span>
+                                                    <span className="hero-stat-label">Jami o'quvchilar</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="hero-stat-value">***</span>
+                                                    <span className="hero-stat-label">Jami o'quvchilar</span>
+                                                </>
+                                            )}
+                                        </div>
+                                        <div className="hero-stat-toggle">
+                                            {showStudents ? <Eye size={14} /> : <EyeOff size={14} />}
                                         </div>
                                         <div className="hero-stat-decoration"></div>
                                     </div>
-                                    <div className="hero-stat-card hero-stat-success">
+
+                                    {/* Tasdiqlangan to'lovlar — toggle */}
+                                    <div className={`hero-stat-card hero-stat-success ${!showPayments ? 'hero-stat-hidden' : ''}`}
+                                        onClick={() => setShowPayments(prev => !prev)}
+                                        style={{ cursor: 'pointer' }}>
                                         <div className="hero-stat-icon"><CheckCircle size={22} /></div>
                                         <div className="hero-stat-content">
-                                            <span className="hero-stat-value">{paymentStats?.totalPayments || data.approved_payments}</span>
-                                            <span className="hero-stat-label">Tasdiqlangan to'lovlar</span>
+                                            {showPayments ? (
+                                                <>
+                                                    <span className="hero-stat-value">{paymentStats?.totalPayments || data.approved_payments}</span>
+                                                    <span className="hero-stat-label">Tasdiqlangan to'lovlar</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="hero-stat-value">***</span>
+                                                    <span className="hero-stat-label">Tasdiqlangan to'lovlar</span>
+                                                </>
+                                            )}
+                                        </div>
+                                        <div className="hero-stat-toggle">
+                                            {showPayments ? <Eye size={14} /> : <EyeOff size={14} />}
                                         </div>
                                         <div className="hero-stat-decoration"></div>
                                     </div>
-                                    <div className="hero-stat-card hero-stat-warning">
+
+                                    {/* Kutilayotgan to'lovlar — toggle */}
+                                    <div className={`hero-stat-card hero-stat-warning ${!showPayments ? 'hero-stat-hidden' : ''}`}
+                                        onClick={() => setShowPayments(prev => !prev)}
+                                        style={{ cursor: 'pointer' }}>
                                         <div className="hero-stat-icon"><Clock size={22} /></div>
                                         <div className="hero-stat-content">
-                                            <span className="hero-stat-value">{paymentStats?.pendingCount || data.pending_payments}</span>
-                                            <span className="hero-stat-label">Kutilayotgan to'lovlar</span>
+                                            {showPayments ? (
+                                                <>
+                                                    <span className="hero-stat-value">{paymentStats?.pendingCount || data.pending_payments}</span>
+                                                    <span className="hero-stat-label">Kutilayotgan to'lovlar</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="hero-stat-value">***</span>
+                                                    <span className="hero-stat-label">Kutilayotgan to'lovlar</span>
+                                                </>
+                                            )}
+                                        </div>
+                                        <div className="hero-stat-toggle">
+                                            {showPayments ? <Eye size={14} /> : <EyeOff size={14} />}
                                         </div>
                                         <div className="hero-stat-decoration"></div>
                                     </div>
-                                    <div className="hero-stat-card hero-stat-info">
+
+                                    {/* Jami daromad — toggle */}
+                                    <div className={`hero-stat-card hero-stat-info ${!showPayments ? 'hero-stat-hidden' : ''}`}
+                                        onClick={() => setShowPayments(prev => !prev)}
+                                        style={{ cursor: 'pointer' }}>
                                         <div className="hero-stat-icon"><DollarSign size={22} /></div>
                                         <div className="hero-stat-content">
-                                            <span className="hero-stat-value">{paymentStats?.totalRevenue?.toLocaleString() || '0'}</span>
-                                            <span className="hero-stat-label">Jami daromad (so'm)</span>
+                                            {showPayments ? (
+                                                <>
+                                                    <span className="hero-stat-value">{paymentStats?.totalRevenue?.toLocaleString() || '0'}</span>
+                                                    <span className="hero-stat-label">Jami daromad (so'm)</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="hero-stat-value">***</span>
+                                                    <span className="hero-stat-label">Jami daromad (so'm)</span>
+                                                </>
+                                            )}
+                                        </div>
+                                        <div className="hero-stat-toggle">
+                                            {showPayments ? <Eye size={14} /> : <EyeOff size={14} />}
                                         </div>
                                         <div className="hero-stat-decoration"></div>
                                     </div>
@@ -471,12 +538,12 @@ export default function AdminPage() {
                                             </div>
                                             <div className="month-stats-grid">
                                                 <div className="month-stat">
-                                                    <span className="month-stat-num">{paymentStats.monthPayments}</span>
+                                                    <span className="month-stat-num">{showPayments ? paymentStats.monthPayments : '***'}</span>
                                                     <span className="month-stat-label">To'lovlar soni</span>
                                                 </div>
                                                 <div className="month-stat-divider"></div>
                                                 <div className="month-stat">
-                                                    <span className="month-stat-num">{paymentStats.monthRevenue?.toLocaleString()}</span>
+                                                    <span className="month-stat-num">{showPayments ? paymentStats.monthRevenue?.toLocaleString() : '***'}</span>
                                                     <span className="month-stat-label">Daromad (so'm)</span>
                                                 </div>
                                                 <div className="month-stat-divider"></div>

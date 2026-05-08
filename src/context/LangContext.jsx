@@ -158,6 +158,9 @@ const translations = {
         video: "Video",
         goToLesson: "Darsga o'tish",
         lockedMsg: "Bu darsga kirish uchun to'lov qiling yoki oldingi darslarni tugating",
+        lockedTitle: "🔒 Bu dars yopiq",
+        payAndAccess: "To'lab, darslarni ochish",
+        loginToAccess: "Kirish va ko'rish",
 
         // RatingPage
         ratingPageTitle: "Reyting",
@@ -423,6 +426,9 @@ const translations = {
         video: "Video",
         goToLesson: "Go to lesson",
         lockedMsg: "Pay or complete previous lessons to access this lesson",
+        lockedTitle: "🔒 This lesson is locked",
+        payAndAccess: "Pay to unlock lessons",
+        loginToAccess: "Login to access",
 
         ratingPageTitle: "Rating",
         bestStudents: "Top students rating",
@@ -683,6 +689,9 @@ const translations = {
         video: "Видео",
         goToLesson: "Перейти к уроку",
         lockedMsg: "Оплатите или завершите предыдущие уроки для доступа",
+        lockedTitle: "🔒 Этот урок закрыт",
+        payAndAccess: "Оплатить и открыть уроки",
+        loginToAccess: "Войти для доступа",
 
         ratingPageTitle: "Рейтинг",
         bestStudents: "Рейтинг лучших студентов",

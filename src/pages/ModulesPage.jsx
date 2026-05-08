@@ -3,17 +3,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { useToast } from '../context/ToastContext';
-import { coursesAPI, paymentsAPI } from '../api/client';
-import { getModulePrice } from '../config/prices';
-import { BookOpen, Lock, CheckCircle, ArrowRight, Loader, CreditCard, PlayCircle, Layers, RefreshCw, WifiOff } from 'lucide-react';
+import { coursesAPI } from '../api/client';
+import { BookOpen, ArrowRight, PlayCircle, Layers, RefreshCw, WifiOff } from 'lucide-react';
 import myLogo from '../assets/mylogo.png';
+import teacherImg from '../assets/teacher.jpg';
 import './ModulesPage.css';
 
 export default function ModulesPage() {
     const [modules, setModules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
-    const [myPayments, setMyPayments] = useState([]);
     const { user } = useAuth();
     const navigate = useNavigate();
     const { t } = useLang();
@@ -27,24 +26,14 @@ export default function ModulesPage() {
         setLoading(true);
         setError(false);
         try {
-            const promises = [coursesAPI.getModules()];
-            if (user) promises.push(paymentsAPI.getMy());
-            const results = await Promise.all(promises);
-            setModules(results[0].data);
-            if (user && results[1]) setMyPayments(results[1].data);
+            const res = await coursesAPI.getModules();
+            setModules(res.data);
         } catch (err) {
             console.error(err);
             setError(true);
             toast.error(t('loadError'));
         }
         setLoading(false);
-    };
-
-    const isPaid = (moduleId) => {
-        return myPayments.some(p => p.module_id === moduleId && (p.status === 'approved' || p.status === 'auto_approved'));
-    };
-    const isPending = (moduleId) => {
-        return myPayments.some(p => p.module_id === moduleId && p.status === 'pending');
     };
 
     if (loading) return (
@@ -92,51 +81,50 @@ export default function ModulesPage() {
             <div className="modules-list">
                 {modules.map((m, i) => (
                     <div key={m.id} className="module-block card">
-                        <div className="module-header">
-                            <div className="module-emoji" style={{ background: `${gradients[i % 5].replace('linear-gradient(135deg, ', '').split(',')[0]}15`, color: gradients[i % 5].replace('linear-gradient(135deg, ', '').split(',')[0] }}>
-                                {icons[i % 5]}
-                            </div>
-                            <div className="module-info">
-                                <h2>{m.name}</h2>
-                                <p>{m.description}</p>
-                            </div>
-                            <div className="module-pricing">
-                                <span className="price">{getModulePrice(m.name, m.price).toLocaleString()} {t('som')}</span>
-                                {isPaid(m.id) ? (
-                                    <span className="badge badge-success"><CheckCircle size={12} /> {t('paid')}</span>
-                                ) : isPending(m.id) ? (
-                                    <span className="badge badge-warning"><Loader size={12} /> {t('checking')}</span>
-                                ) : (
-                                    <Link to={`/payment/${m.id}`} className="btn btn-primary btn-sm">
-                                        <CreditCard size={14} /> {t('pay')}
-                                    </Link>
+                        <div className="module-block-inner">
+                            <div className="module-block-left">
+                                <div className="module-header">
+                                    <div className="module-emoji" style={{ background: `${gradients[i % 5].replace('linear-gradient(135deg, ', '').split(',')[0]}15`, color: gradients[i % 5].replace('linear-gradient(135deg, ', '').split(',')[0] }}>
+                                        {icons[i % 5]}
+                                    </div>
+                                    <div className="module-info">
+                                        <h2>{m.name}</h2>
+                                        <p>{m.description}</p>
+                                    </div>
+                                </div>
+
+                                {m.courses?.length > 0 && (
+                                    <div className="courses-grid">
+                                        {m.courses.map((c, ci) => (
+                                            <div key={c.id} className="course-card" onClick={() => navigate(`/course/${c.id}`)}
+                                                style={{ '--card-gradient': gradients[(i + ci) % 5] }}>
+                                                <div className="course-card-bg" style={{ background: gradients[(i + ci) % 5] }} />
+                                                <div className="course-card-content">
+                                                    <div className="course-card-icon">
+                                                        <PlayCircle size={24} />
+                                                    </div>
+                                                    <h3>{c.name}</h3>
+
+                                                    <div className="course-card-footer">
+                                                        <span className="course-lessons-count">
+                                                            <Layers size={12} /> {c.lessons_count || 0} {t('lesson')}
+                                                        </span>
+                                                        <ArrowRight size={16} className="course-card-arrow" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
-                        </div>
 
-                        {m.courses?.length > 0 && (
-                            <div className="courses-grid">
-                                {m.courses.map((c, ci) => (
-                                    <div key={c.id} className="course-card" onClick={() => navigate(`/course/${c.id}`)}
-                                        style={{ '--card-gradient': gradients[(i + ci) % 5] }}>
-                                        <div className="course-card-bg" style={{ background: gradients[(i + ci) % 5] }} />
-                                        <div className="course-card-content">
-                                            <div className="course-card-icon">
-                                                <PlayCircle size={24} />
-                                            </div>
-                                            <h3>{c.name}</h3>
-                                            {c.description && <p className="course-card-desc">{c.description}</p>}
-                                            <div className="course-card-footer">
-                                                <span className="course-lessons-count">
-                                                    <Layers size={12} /> {c.lessons_count || 0} {t('lesson')}
-                                                </span>
-                                                <ArrowRight size={16} className="course-card-arrow" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                            <div className="module-teacher-photo">
+                                <div className="teacher-photo-frame" style={{ '--frame-gradient': gradients[i % 5] }}>
+                                    <img src={teacherImg} alt="O'qituvchi" />
+                                </div>
+                                <span className="teacher-label">O'qituvchi</span>
                             </div>
-                        )}
+                        </div>
                     </div>
                 ))}
             </div>

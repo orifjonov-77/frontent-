@@ -12,9 +12,9 @@ function Stars() {
         const el = containerRef.current;
         if (!el) return;
         let id;
+        let frame = 0;
 
-        // Yulduz elementlarini yaratish
-        const stars = Array.from({ length: 55 }, () => {
+        const stars = Array.from({ length: 20 }, () => {
             const img = document.createElement('img');
             img.src = starSrc;
             img.alt = '';
@@ -27,6 +27,7 @@ function Stars() {
                 height: size + 'px',
                 filter: 'drop-shadow(0 0 4px rgba(100,150,255,0.7))',
                 pointerEvents: 'none',
+                willChange: 'transform, opacity',
             });
             el.appendChild(img);
             return {
@@ -37,12 +38,15 @@ function Stars() {
         });
 
         function loop() {
-            for (const s of stars) {
-                s.phase += s.speed;
-                const opacity = 0.2 + (Math.sin(s.phase) * 0.5 + 0.5) * 0.8;
-                const scale = 0.6 + (Math.sin(s.phase) * 0.5 + 0.5) * 0.5;
-                s.el.style.opacity = opacity;
-                s.el.style.transform = `scale(${scale})`;
+            frame++;
+            if (frame % 2 === 0) {
+                for (const s of stars) {
+                    s.phase += s.speed;
+                    const opacity = 0.2 + (Math.sin(s.phase) * 0.5 + 0.5) * 0.8;
+                    const scale = 0.6 + (Math.sin(s.phase) * 0.5 + 0.5) * 0.5;
+                    s.el.style.opacity = opacity;
+                    s.el.style.transform = `scale(${scale})`;
+                }
             }
             id = requestAnimationFrame(loop);
         }
@@ -65,9 +69,10 @@ function Clouds() {
         const el = containerRef.current;
         if (!el) return;
         let id;
+        let frame = 0;
         const W = window.innerWidth;
 
-        const clouds = Array.from({ length: 12 }, () => {
+        const clouds = Array.from({ length: 6 }, () => {
             const img = document.createElement('img');
             img.src = cloudSrc;
             img.alt = '';
@@ -80,24 +85,28 @@ function Clouds() {
                 height: 'auto',
                 opacity: opacity,
                 pointerEvents: 'none',
+                willChange: 'transform',
             });
             el.appendChild(img);
             return {
                 el: img,
-                x: Math.random() * (W + 300) - 300, // random boshlang'ich
+                x: Math.random() * (W + 300) - 300,
                 speed: 0.3 + Math.random() * 0.5,
                 size,
             };
         });
 
         function loop() {
-            const w = window.innerWidth;
-            for (const c of clouds) {
-                c.x += c.speed;
-                if (c.x > w + 50) {
-                    c.x = -c.size - 50;
+            frame++;
+            if (frame % 2 === 0) {
+                const w = window.innerWidth;
+                for (const c of clouds) {
+                    c.x += c.speed * 2;
+                    if (c.x > w + 50) {
+                        c.x = -c.size - 50;
+                    }
+                    c.el.style.transform = `translateX(${c.x}px)`;
                 }
-                c.el.style.transform = `translateX(${c.x}px)`;
             }
             id = requestAnimationFrame(loop);
         }

@@ -74,7 +74,7 @@ function AppContent() {
               <Route path="/modules" element={<ModulesPage />} />
               <Route path="/rating" element={<RatingPage />} />
               <Route path="/terms" element={<TermsPage />} />
-              <Route path="/course/:courseId" element={<ProtectedRoute><CoursePage /></ProtectedRoute>} />
+              <Route path="/course/:courseId" element={<CoursePage />} />
               <Route path="/lesson/:lessonId" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
               <Route path="/payment/:moduleId" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />

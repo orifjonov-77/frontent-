@@ -141,4 +141,77 @@
   .lang-label {
     display: none;
   }
+
+  .login-desktop-btn {
+    display: none !important;
+  }
+}
+
+/* Login Nav Link — special gradient accent */
+.login-nav-link {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700 !important;
+  position: relative;
+}
+
+.login-nav-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid transparent;
+  background: var(--gradient) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.login-nav-link:hover::before {
+  opacity: 1;
+}
+
+.login-nav-link:hover {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transform: translateX(2px);
+}
+
+.login-nav-link svg {
+  color: var(--primary);
+  -webkit-text-fill-color: initial;
+}
+
+/* Desktop login button in nav-actions */
+.login-desktop-btn {
+  padding: 0.4rem 0.85rem !important;
+  font-size: 0.82rem !important;
+  gap: 0.35rem !important;
+  animation: loginPulse 3s ease-in-out infinite;
+}
+
+@keyframes loginPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 4px 16px var(--primary-glow);
+  }
+
+  50% {
+    box-shadow: 0 4px 24px var(--primary-glow), 0 0 40px var(--primary-glow);
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-links.open .login-nav-link {
+    animation: slideInRight 0.3s ease both;
+    animation-delay: 0.35s;
+  }
 }

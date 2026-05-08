@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLang } from '../context/LangContext';
 import {
     Home, BookOpen, Trophy, User, Shield,
-    Sun, Moon, Menu, X, LogOut, FileText, Globe
+    Sun, Moon, Menu, X, LogOut, LogIn, FileText, Globe
 } from 'lucide-react';
 import myLogo from '../assets/mylogo.png';
 import AnimatedBackground from './AnimatedBackground';
@@ -108,6 +108,16 @@ export default function Layout() {
                                 {t('admin')}
                             </Link>
                         )}
+
+                        {!user && (
+                            <Link
+                                to="/login"
+                                className={`nav-link login-nav-link ${isActive('/login')}`}
+                            >
+                                <LogIn size={17} />
+                                {t('login')}
+                            </Link>
+                        )}
                     </div>
 
                     <div className="nav-actions">
@@ -130,7 +140,7 @@ export default function Layout() {
                             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
                         </button>
 
-                        {user && (
+                        {user ? (
                             <button
                                 className="btn-icon"
                                 onClick={logout}
@@ -139,6 +149,14 @@ export default function Layout() {
                             >
                                 <LogOut size={17} />
                             </button>
+                        ) : (
+                            <Link
+                                to="/login"
+                                className="btn btn-primary btn-sm login-desktop-btn"
+                            >
+                                <LogIn size={15} />
+                                {t('login')}
+                            </Link>
                         )}
 
                         <button

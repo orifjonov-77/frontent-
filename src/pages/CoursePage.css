@@ -1,14 +1,15 @@
 /* ====== COURSE PAGE ====== */
 .course-page {
-    padding-bottom: 3rem;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
 .course-header {
-    margin-bottom: 1.75rem;
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
 .course-header h1 {
-    font-family: var(--font-heading);
     margin-bottom: 0.5rem;
 }
 
@@ -17,6 +18,7 @@
     font-size: 0.95rem;
 }
 
+/* ====== LESSON ITEMS ====== */
 .lessons-list {
     display: flex;
     flex-direction: column;
@@ -24,67 +26,64 @@
 }
 
 .lesson-item {
-    padding: 0;
-    overflow: hidden;
     transition: var(--transition);
 }
 
-.lesson-item:hover {
-    transform: translateY(-2px);
+.lesson-item.locked {
+    opacity: 0.7;
 }
 
-.lesson-item.locked {
-    opacity: 0.65;
+.lesson-item.locked:hover {
+    opacity: 0.85;
+}
+
+.lesson-item.free-lesson {
+    border-color: var(--success);
+    border-width: 1.5px;
 }
 
 .lesson-header {
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1.15rem 1.25rem;
     cursor: pointer;
-    transition: background 0.2s;
-}
-
-.lesson-header:hover {
-    background: var(--bg-card-hover);
+    padding: 0.25rem 0;
 }
 
 .lesson-number {
     width: 36px;
     height: 36px;
-    border-radius: 10px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.9rem;
     flex-shrink: 0;
     transition: var(--transition);
 }
 
-.lesson-number .num {
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: var(--primary);
+.lesson-item:hover .lesson-number {
+    transform: scale(1.1);
 }
 
-.completed-icon {
+.lesson-number .completed-icon {
     color: var(--success);
 }
 
-.lock-icon {
+.lesson-number .lock-icon {
     color: var(--text-muted);
 }
 
 .lesson-info {
     flex: 1;
-    min-width: 0;
 }
 
 .lesson-info h3 {
-    font-family: var(--font-heading);
     font-size: 0.95rem;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.25rem;
 }
 
 .lesson-tags {
@@ -93,9 +92,20 @@
     flex-wrap: wrap;
 }
 
-.lesson-tags .badge {
-    font-size: 0.7rem;
-    padding: 0.15rem 0.5rem;
+.free-badge {
+    animation: freeGlow 2.5s ease-in-out infinite;
+}
+
+@keyframes freeGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(5, 150, 105, 0);
+    }
+
+    50% {
+        box-shadow: 0 0 12px 3px rgba(5, 150, 105, 0.25);
+    }
 }
 
 .expand-icon {
@@ -108,37 +118,34 @@
     transform: rotate(180deg);
 }
 
-/* Lesson Content (expanded) */
+/* ====== LESSON CONTENT (expanded) ====== */
 .lesson-content {
-    padding: 0 1.25rem 1.25rem;
-    animation: slideDown 0.3s ease;
+    margin-top: 1rem;
+    padding-top: 1rem;
     border-top: 1px solid var(--border-light);
+    animation: slideDown 0.3s ease;
 }
 
 @keyframes slideDown {
     from {
         opacity: 0;
-        max-height: 0;
-        padding-top: 0;
+        transform: translateY(-10px);
     }
 
     to {
         opacity: 1;
-        max-height: 400px;
-        padding-top: 1rem;
+        transform: translateY(0);
     }
-}
-
-.lesson-content {
-    padding-top: 1rem;
 }
 
 .lesson-desc {
     color: var(--text-secondary);
     font-size: 0.88rem;
     margin-bottom: 1rem;
+    line-height: 1.6;
 }
 
+/* ====== PROGRESS INDICATORS ====== */
 .progress-indicators {
     display: flex;
     flex-wrap: wrap;
@@ -149,43 +156,181 @@
 .indicator {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
-    padding: 0.35rem 0.75rem;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
     border-radius: 100px;
     font-size: 0.78rem;
     font-weight: 500;
     background: var(--bg-input);
     color: var(--text-muted);
-    border: 1px solid var(--border);
     transition: var(--transition);
 }
 
 .indicator.done {
     background: var(--success-bg);
     color: var(--success);
-    border-color: transparent;
 }
 
-.locked-message {
+/* ====== LOCKED MESSAGE — PREMIUM DESIGN ====== */
+.locked-message-premium {
     text-align: center;
-    padding: 1.5rem;
-    background: var(--bg-secondary);
+    padding: 2rem 1.5rem;
+    background: var(--gradient-subtle);
     border-radius: var(--radius-sm);
+    border: 1px solid var(--border-light);
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.4s ease;
 }
 
-.locked-message p {
+.locked-message-premium::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, var(--primary-light) 0%, transparent 70%);
+    animation: lockedShimmer 4s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes lockedShimmer {
+
+    0%,
+    100% {
+        transform: translate(-10%, -10%) scale(1);
+        opacity: 0.3;
+    }
+
+    50% {
+        transform: translate(10%, 10%) scale(1.1);
+        opacity: 0.6;
+    }
+}
+
+.locked-icon-wrap {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-light);
+    color: var(--primary);
+    margin: 0 auto 1rem;
+    position: relative;
+    z-index: 1;
+    animation: lockBounce 2s ease-in-out infinite;
+    will-change: transform;
+}
+
+@keyframes lockBounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+.locked-message-premium h4 {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.locked-message-premium p {
     color: var(--text-secondary);
     font-size: 0.88rem;
-    margin: 0.75rem 0;
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+    position: relative;
+    z-index: 1;
 }
 
+/* ====== PRICE TAG ====== */
+.locked-price-tag {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    padding: 0.65rem 1.5rem;
+    background: var(--gradient);
+    border-radius: 100px;
+    margin-bottom: 1.25rem;
+    position: relative;
+    z-index: 1;
+    animation: priceTagGlow 3s ease-in-out infinite;
+}
+
+@keyframes priceTagGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 16px var(--primary-glow);
+    }
+
+    50% {
+        box-shadow: 0 4px 28px var(--primary-glow), 0 0 50px var(--primary-glow);
+    }
+}
+
+.locked-price-amount {
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+}
+
+.locked-price-currency {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* ====== PAY BUTTON ====== */
+.locked-pay-btn {
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+.locked-pay-btn:hover {
+    transform: translateY(-3px) scale(1.02) !important;
+}
+
+/* ====== RESPONSIVE ====== */
 @media (max-width: 480px) {
     .lesson-header {
-        padding: 0.9rem 1rem;
-        gap: 0.75rem;
+        gap: 0.65rem;
+    }
+
+    .lesson-number {
+        width: 32px;
+        height: 32px;
+        font-size: 0.82rem;
     }
 
     .lesson-info h3 {
         font-size: 0.88rem;
+    }
+
+    .locked-message-premium {
+        padding: 1.5rem 1rem;
+    }
+
+    .locked-price-amount {
+        font-size: 1.15rem;
+    }
+
+    .locked-icon-wrap {
+        width: 50px;
+        height: 50px;
     }
 }

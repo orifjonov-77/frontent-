@@ -891,6 +891,34 @@
     object-fit: contain;
 }
 
+/* Toggle eye icon on hero cards */
+.hero-stat-toggle {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    color: var(--text-muted);
+    opacity: 0.5;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    z-index: 2;
+}
+
+.hero-stat-card:hover .hero-stat-toggle {
+    opacity: 1;
+    color: var(--primary);
+}
+
+/* Hidden state — blur values */
+.hero-stat-hidden .hero-stat-value {
+    filter: blur(6px);
+    user-select: none;
+    transition: filter 0.3s ease;
+}
+
+.hero-stat-hidden .hero-stat-icon {
+    opacity: 0.4;
+}
+
+/* ─── MOBILE RESPONSIVE ─── */
 @media (max-width: 768px) {
     .dashboard-bottom-row {
         grid-template-columns: 1fr;
@@ -898,24 +926,287 @@
 
     .hero-stats {
         grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+    }
+
+    .hero-stat-card {
+        padding: 0.85rem;
+        gap: 0.6rem;
+    }
+
+    .hero-stat-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .hero-stat-value {
+        font-size: 1.15rem;
+    }
+
+    .hero-stat-label {
+        font-size: 0.7rem;
+    }
+
+    .hero-stat-decoration {
+        width: 60px;
+        height: 60px;
     }
 
     .month-stats-grid {
         flex-wrap: wrap;
+        gap: 0.5rem;
     }
 
+    .month-stat-num {
+        font-size: 1rem;
+    }
+
+    .month-stat-divider {
+        display: none;
+    }
+
+    .month-stat {
+        min-width: 45%;
+        padding: 0.5rem;
+        background: var(--bg-secondary);
+        border-radius: var(--radius-xs);
+    }
+
+    /* Tabs */
     .admin-tabs {
         padding: 0.15rem;
         gap: 0.15rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .admin-tabs::-webkit-scrollbar {
+        display: none;
     }
 
     .admin-tab {
         padding: 0.5rem 0.65rem;
         font-size: 0.75rem;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
+    .admin-tab svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    /* Tables — mobile card view */
+    .table-wrap {
+        border: none;
+        border-radius: 0;
+    }
+
+    .admin-table {
+        font-size: 0.78rem;
+    }
+
+    .admin-table th {
+        padding: 0.5rem 0.6rem;
+        font-size: 0.72rem;
+    }
+
+    .admin-table td {
+        padding: 0.5rem 0.6rem;
+    }
+
+    .action-btns {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .action-btns .btn {
+        width: 100%;
+        justify-content: center;
+        font-size: 0.72rem;
+        padding: 0.4rem 0.5rem;
+    }
+
+    .grade-form {
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .grade-form .input,
+    .grade-form select {
+        width: 100% !important;
+    }
+
+    .grade-form .btn {
+        width: 100%;
+    }
+
+    .td-text {
+        max-width: 120px;
+    }
+
+    .tg-link {
+        display: block;
+    }
+
+    /* Cascading selects */
     .cascading-selects {
         flex-direction: column;
+    }
+
+    .cascading-selects .input {
+        min-width: 100%;
+    }
+
+    /* Modal */
+    .modal-box {
+        max-width: 100%;
+        margin: 0.5rem;
+        max-height: 90vh;
+    }
+
+    .modal-header {
+        padding: 0.85rem 1rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    /* Student detail */
+    .student-detail-content {
+        padding: 1.25rem;
+        max-width: 100%;
+    }
+
+    /* Chat */
+    .chat-detail-header {
+        gap: 0.5rem;
+    }
+
+    .chat-detail-name {
+        font-size: 0.85rem;
+    }
+
+    .chat-detail-messages {
+        max-height: 50vh;
+        padding: 0.75rem;
+    }
+
+    .admin-chat-msg {
+        max-width: 90%;
+        font-size: 0.82rem;
+    }
+
+    .chat-reply-bar {
+        flex-direction: row;
+    }
+
+    .chat-reply-bar .input {
+        min-width: 0;
+    }
+
+    .conv-card {
+        padding: 0.75rem;
+    }
+
+    .conv-last {
+        max-width: 180px;
+        font-size: 0.75rem;
+    }
+
+    /* Content tabs */
+    .content-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .content-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .content-tab {
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-size: 0.74rem;
+        padding: 0.4rem 0.7rem;
+    }
+
+    /* Existing items */
+    .existing-item {
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        padding: 0.5rem 0.65rem;
+    }
+
+    .edit-row {
+        flex-direction: column;
+    }
+
+    .edit-row .input {
+        min-width: 100%;
+    }
+
+    /* Profit bars */
+    .profit-bar-label {
+        font-size: 0.78rem;
+    }
+
+    .profit-bar-track {
+        height: 22px;
+    }
+
+    .profit-bar-fill::after {
+        font-size: 0.6rem;
+    }
+
+    .profit-bar-name {
+        font-size: 0.78rem;
+    }
+
+    .profit-bar-amount {
+        font-size: 0.78rem;
+    }
+
+    /* Recent payments */
+    .recent-item {
+        padding: 0.5rem;
+        gap: 0.4rem;
+    }
+
+    .recent-item-name {
+        font-size: 0.78rem;
+    }
+
+    .recent-amount-value {
+        font-size: 0.78rem;
+    }
+
+    /* Check image modal */
+    .check-image-modal {
+        padding: 1rem;
+    }
+
+    .check-image-modal img {
+        max-width: 95vw;
+        max-height: 80vh;
+    }
+
+    /* Test question form */
+    .test-q-item {
+        padding: 0.75rem;
+    }
+
+    .test-q-fields .input {
+        font-size: 0.78rem;
+        padding: 0.4rem 0.6rem;
+    }
+
+    .correct-select {
+        font-size: 0.75rem;
+        flex-wrap: wrap;
     }
 }
 
@@ -925,6 +1216,54 @@
     }
 
     .admin-page {
-        padding: 0 0.5rem 2rem;
+        padding: 0 0.25rem 2rem;
+    }
+
+    .admin-title {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .hero-stat-card {
+        flex-direction: row;
+        align-items: center;
+        padding: 0.75rem;
+    }
+
+    .hero-stat-value {
+        font-size: 1.1rem;
+    }
+
+    .month-card {
+        padding: 0.75rem;
+    }
+
+    .month-card-header {
+        font-size: 0.82rem;
+    }
+
+    .profit-header {
+        font-size: 0.82rem;
+    }
+
+    /* Chat compact */
+    .conv-card {
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .conv-meta {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    .conv-last {
+        max-width: 100%;
+    }
+
+    .chat-detail-header {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
