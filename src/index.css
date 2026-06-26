@@ -1004,7 +1004,6 @@ select.input {
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-bottom: 1px solid var(--border);
   height: var(--nav-height);
-  position: relative;
 }
 
 .nav-inner {

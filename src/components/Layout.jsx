@@ -112,7 +112,7 @@ export default function Layout() {
                         {!user && (
                             <Link
                                 to="/login"
-                                className={`nav-link login-nav-link ${isActive('/login')}`}
+                                className="nav-link login-nav-link login-mobile-only"
                             >
                                 <LogIn size={17} />
                                 {t('login')}

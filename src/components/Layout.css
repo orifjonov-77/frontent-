@@ -147,6 +147,17 @@
   }
 }
 
+/* Login link — faqat mobil hamburger menuда ko'rinadi */
+.login-mobile-only {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .login-mobile-only {
+    display: flex;
+  }
+}
+
 /* Login Nav Link — special gradient accent */
 .login-nav-link {
   background: var(--gradient);
