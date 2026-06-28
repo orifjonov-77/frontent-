@@ -1113,24 +1113,26 @@ export default function AdminPage() {
             {/* Course Modal */}
             <Modal open={modalOpen && modalType === 'course'} title="Yangi Kurs" onClose={closeModal}>
                 <div className="modal-form">
+                    {!selModule && <p className="form-hint" style={{ color: 'var(--danger)' }}>⚠️ Avval Modulni tanlang</p>}
                     {renderCascadingSelects()}
                     {selModule && <>
                         <div className="form-group"><label>Kurs nomi</label><input className="input" placeholder="masalan: Frontend" value={formData.name || ''} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} /></div>
                         <div className="form-group"><label>Slug</label><input className="input" placeholder="masalan: frontend" value={formData.slug || ''} onChange={e => setFormData(p => ({ ...p, slug: e.target.value }))} /></div>
                         <div className="form-group"><label>Tavsif</label><textarea className="input" rows={2} value={formData.description || ''} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} /></div>
-                        <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={closeModal}>Bekor</button>
-                            <button className="btn btn-primary" onClick={() => handleAction('createCourse')} disabled={submitting || !selModule}>
-                                {submitting ? <Loader size={16} className="spin" /> : <><Check size={16} /> Saqlash</>}
-                            </button>
-                        </div>
                     </>}
+                    <div className="modal-actions">
+                        <button className="btn btn-secondary" onClick={closeModal}>Bekor</button>
+                        <button className="btn btn-primary" onClick={() => handleAction('createCourse')} disabled={submitting || !selModule}>
+                            {submitting ? <Loader size={16} className="spin" /> : <><Check size={16} /> Saqlash</>}
+                        </button>
+                    </div>
                 </div>
             </Modal>
 
             {/* Lesson Modal */}
             <Modal open={modalOpen && modalType === 'lesson'} title="Yangi Dars" onClose={closeModal}>
                 <div className="modal-form">
+                    {!selCourse && <p className="form-hint" style={{ color: 'var(--danger)' }}>⚠️ Avval Modul va Kursni tanlang</p>}
                     {renderCascadingSelects()}
                     {selCourse && <>
                         <div className="form-group"><label>Dars sarlavhasi</label><input className="input" placeholder="masalan: HTML kirish" value={formData.title || ''} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} /></div>
@@ -1144,13 +1146,13 @@ export default function AdminPage() {
                             </label>
                         </div>
                         <div className="form-group"><label>Tavsif</label><textarea className="input" rows={2} value={formData.description || ''} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} /></div>
-                        <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={closeModal}>Bekor</button>
-                            <button className="btn btn-primary" onClick={() => handleAction('createLesson')} disabled={submitting || !selCourse}>
-                                {submitting ? <Loader size={16} className="spin" /> : <><Check size={16} /> Saqlash</>}
-                            </button>
-                        </div>
                     </>}
+                    <div className="modal-actions">
+                        <button className="btn btn-secondary" onClick={closeModal}>Bekor</button>
+                        <button className="btn btn-primary" onClick={() => handleAction('createLesson')} disabled={submitting || !selCourse}>
+                            {submitting ? <Loader size={16} className="spin" /> : <><Check size={16} /> Saqlash</>}
+                        </button>
+                    </div>
                 </div>
             </Modal>
 
@@ -1216,13 +1218,13 @@ export default function AdminPage() {
                         <div className="form-group"><label>Vazifa sarlavhasi</label><input className="input" value={formData.title || ''} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} /></div>
                         <div className="form-group"><label>Tavsif / Topshiriq matni</label><textarea className="input" rows={4} value={formData.description || ''} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} placeholder="Vazifa nima ekanligini batafsil yozing..." /></div>
                         <div className="form-group"><label>Muddat (soat)</label><input className="input" type="number" placeholder="24" value={formData.deadline_hours || ''} onChange={e => setFormData(p => ({ ...p, deadline_hours: e.target.value }))} /></div>
-                        <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={closeModal}>Bekor</button>
-                            <button className="btn btn-primary" onClick={() => handleAction('createHomework')} disabled={submitting}>
-                                {submitting ? <Loader size={16} className="spin" /> : <><Check size={16} /> Saqlash</>}
-                            </button>
-                        </div>
                     </>}
+                    <div className="modal-actions">
+                        <button className="btn btn-secondary" onClick={closeModal}>Bekor</button>
+                        <button className="btn btn-primary" onClick={() => handleAction('createHomework')} disabled={submitting || !selLesson}>
+                            {submitting ? <Loader size={16} className="spin" /> : <><Check size={16} /> Saqlash</>}
+                        </button>
+                    </div>
                 </div>
             </Modal>
 
@@ -1234,13 +1236,13 @@ export default function AdminPage() {
                         <div className="form-group"><label>O'yin sarlavhasi</label><input className="input" value={formData.title || ''} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} /></div>
                         <div className="form-group"><label>Tavsif</label><textarea className="input" rows={2} value={formData.description || ''} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} /></div>
                         <div className="form-group"><label>Topshiriq matni (task_data)</label><textarea className="input" rows={4} value={formData.task_data || ''} onChange={e => setFormData(p => ({ ...p, task_data: e.target.value }))} placeholder="O'yin topshiriq matni..." /></div>
-                        <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={closeModal}>Bekor</button>
-                            <button className="btn btn-primary" onClick={() => handleAction('createGame')} disabled={submitting}>
-                                {submitting ? <Loader size={16} className="spin" /> : <><Check size={16} /> Saqlash</>}
-                            </button>
-                        </div>
                     </>}
+                    <div className="modal-actions">
+                        <button className="btn btn-secondary" onClick={closeModal}>Bekor</button>
+                        <button className="btn btn-primary" onClick={() => handleAction('createGame')} disabled={submitting || !selLesson}>
+                            {submitting ? <Loader size={16} className="spin" /> : <><Check size={16} /> Saqlash</>}
+                        </button>
+                    </div>
                 </div>
             </Modal>
 
