@@ -430,7 +430,7 @@ export default function AdminPage() {
                         {tab === 'dashboard' && data && (
                             <div className="dashboard-stats">
                                 {/* Hero Stat Cards */}
-                                <div className="hero-stats stagger-children">
+                                <div className="hero-stats animate-fade">
                                     {/* O'quvchilar soni — toggle */}
                                     <div className={`hero-stat-card hero-stat-primary ${!showStudents ? 'hero-stat-hidden' : ''}`}
                                         onClick={() => setShowStudents(prev => !prev)}
@@ -530,7 +530,7 @@ export default function AdminPage() {
 
                                 {/* Monthly Summary */}
                                 {paymentStats && (
-                                    <div className="month-summary-row stagger-children">
+                                    <div className="month-summary-row animate-fade">
                                         <div className="month-card card">
                                             <div className="month-card-header">
                                                 <Activity size={18} />
@@ -712,7 +712,7 @@ export default function AdminPage() {
                         {tab === 'chat' && (
                             <div className="admin-chat-section">
                                 {!selectedChat ? (
-                                    <div className="chat-conversations stagger-children">
+                                    <div className="chat-conversations animate-fade">
                                         <h3><MessageCircle size={18} /> Suhbatlar ({conversations.length})</h3>
                                         {conversations.length === 0 && <p className="empty-text">Hali xabar yo'q</p>}
                                         {conversations.map(c => (
@@ -870,7 +870,7 @@ export default function AdminPage() {
 
                                 {/* ---- MODULES ---- */}
                                 {contentTab === 'modules' && (
-                                    <div className="content-section stagger-children">
+                                    <div className="content-section animate-fade">
                                         <div className="section-header">
                                             <h3><Layers size={16} /> Modullar <span className="badge badge-info">{existingModules.length}</span></h3>
                                             <button className="btn btn-primary btn-sm" onClick={() => openModal('module')}><Plus size={14} /> Modul</button>
@@ -906,7 +906,7 @@ export default function AdminPage() {
 
                                 {/* ---- COURSES ---- */}
                                 {contentTab === 'courses' && (
-                                    <div className="content-section stagger-children">
+                                    <div className="content-section animate-fade">
                                         <div className="section-header">
                                             <h3><FolderOpen size={16} /> Kurslar <span className="badge badge-info">{existingCourses.length}</span></h3>
                                             <button className="btn btn-primary btn-sm" onClick={() => openModal('course')}><Plus size={14} /> Kurs</button>
@@ -940,7 +940,7 @@ export default function AdminPage() {
 
                                 {/* ---- LESSONS ---- */}
                                 {contentTab === 'lessons' && (
-                                    <div className="content-section stagger-children">
+                                    <div className="content-section animate-fade">
                                         <div className="section-header">
                                             <h3><PlayCircle size={16} /> Darslar</h3>
                                             <button className="btn btn-primary btn-sm" onClick={() => openModal('lesson')}><Plus size={14} /> Dars</button>
@@ -997,7 +997,7 @@ export default function AdminPage() {
 
                                 {/* ---- TESTS ---- */}
                                 {contentTab === 'tests' && (
-                                    <div className="content-section stagger-children">
+                                    <div className="content-section animate-fade">
                                         <div className="section-header">
                                             <h3><FileText size={16} /> Testlar</h3>
                                             <button className="btn btn-primary btn-sm" onClick={() => openModal('test')}><Plus size={14} /> Test qo'shish</button>
@@ -1032,7 +1032,7 @@ export default function AdminPage() {
 
                                 {/* ---- HOMEWORK ---- */}
                                 {contentTab === 'homeworkTab' && (
-                                    <div className="content-section stagger-children">
+                                    <div className="content-section animate-fade">
                                         <div className="section-header">
                                             <h3><BookOpen size={16} /> Uy vazifalari</h3>
                                             <button className="btn btn-primary btn-sm" onClick={() => openModal('homework')}><Plus size={14} /> Vazifa qo'shish</button>
@@ -1059,7 +1059,7 @@ export default function AdminPage() {
 
                                 {/* ---- GAMES ---- */}
                                 {contentTab === 'games' && (
-                                    <div className="content-section stagger-children">
+                                    <div className="content-section animate-fade">
                                         <div className="section-header">
                                             <h3><Gamepad2 size={16} /> O'yinlar</h3>
                                             <button className="btn btn-primary btn-sm" onClick={() => openModal('game')}><Plus size={14} /> O'yin qo'shish</button>
