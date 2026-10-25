@@ -376,7 +376,7 @@ export default function LessonPage() {
         <div className="lesson-page animate-fade">
             {ModalComponent}
 
-            <Link to={-1} className="back-link"><ArrowLeft size={16} /> {t('backBtn')}</Link>
+            <button type="button" onClick={() => navigate(-1)} className="back-link"><ArrowLeft size={16} /> {t('backBtn')}</button>
 
             {/* Tabs */}
             <div className="lesson-tabs">
@@ -482,8 +482,8 @@ export default function LessonPage() {
 
                         {!homework && (
                             <div className="hw-info-banner" style={{ marginBottom: '1rem' }}>
-                                <Loader size={16} className="spin" />
-                                <span>{t('hwLoading')}</span>
+                                <AlertCircle size={16} />
+                                <span>{t('noHomework')}</span>
                             </div>
                         )}
 

@@ -9,7 +9,7 @@
 
 .login-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   padding: 2.5rem;
   background: var(--bg-glass);
   backdrop-filter: blur(20px);
@@ -33,7 +33,7 @@
 
 .login-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .login-logo {
@@ -64,6 +64,45 @@
   font-size: 0.9rem;
 }
 
+/* Auth Mode Tabs (Ro'yxatdan o'tish | Kirish) */
+.auth-mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.5rem;
+}
+
+.auth-mode-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.65rem 0.75rem;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 3px);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.auth-mode-tab:hover {
+  color: var(--text);
+}
+
+.auth-mode-tab.active {
+  background: var(--gradient);
+  color: #fff;
+  box-shadow: 0 3px 10px var(--primary-glow);
+}
+
 .login-error {
   background: var(--danger-bg);
   color: var(--danger);
@@ -78,14 +117,14 @@
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
 }
 
 /* Step 2 */
 .login-step2 {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .bot-instructions {
@@ -94,6 +133,10 @@
   background: var(--gradient-subtle);
   border-radius: var(--radius);
   border: 1px solid var(--border-light);
+}
+
+.bot-instructions.compact {
+  padding: 1rem;
 }
 
 .bot-icon {
@@ -105,13 +148,45 @@
 .bot-instructions h3 {
   font-family: var(--font-heading);
   color: var(--primary);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
 }
 
-.bot-instructions p {
+.bot-desc {
   font-size: 0.85rem;
   color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.bot-steps-list {
+  text-align: left;
+  background: var(--bg-card);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  margin-bottom: 0.5rem;
+}
+
+.bot-steps-list p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
   margin-bottom: 0.25rem;
+}
+
+.otp-sent-note {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.otp-phone-badge {
+  display: inline-block;
+  font-size: 0.9rem;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 0.2rem 0.75rem;
+  border-radius: 100px;
 }
 
 .code-input {
@@ -119,11 +194,41 @@
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.5rem;
-  padding: 1rem;
+  padding: 0.9rem;
+}
+
+.login-resend-row {
+  display: flex;
+  justify-content: center;
+  margin: 0.35rem 0;
+}
+
+.resend-timer {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.resend-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-xs);
+  transition: var(--transition);
+}
+
+.resend-btn:hover {
+  background: var(--primary-light);
 }
 
 @media (max-width: 480px) {
   .login-card {
-    padding: 1.75rem;
+    padding: 1.75rem 1.25rem;
   }
 }

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { BookOpen, Code, Monitor, Scissors, ArrowRight, Users, Award, Zap, ChevronRight } from 'lucide-react';
-import myLogo from '../assets/mylogo.png';
 import './HomePage.css';
 
 // Typewriter
@@ -235,33 +234,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="site-footer">
-        <div className="container">
-          <div className="footer-content">
-            <div className="footer-brand">
-              <div className="footer-logo-row">
-                <img src={myLogo} alt="MDev" className="footer-logo-img" />
-                <h3>{t('platformTitle')}</h3>
-              </div>
-              <p>{t('footerDesc')}</p>
-            </div>
-            <div className="footer-links">
-              <Link to="/modules">{t('modules')}</Link>
-              <Link to="/rating">{t('rating')}</Link>
-              <Link to="/terms">{t('rules')}</Link>
-            </div>
-            <div className="footer-contact">
-              <p>📞 +998889810206</p>
-              <p>👨‍🏫 Muhammaddiyor Orifjonov</p>
-            </div>
-          </div>
-          <div className="footer-bottom">
-            <p>{t('allRights')}</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLang } from '../context/LangContext';
 import {
     Home, BookOpen, Trophy, User, Shield,
-    Sun, Moon, Menu, X, LogOut, LogIn, FileText, Globe
+    Sun, Moon, Menu, X, LogOut, LogIn, FileText, Globe, Award
 } from 'lucide-react';
 import myLogo from '../assets/mylogo.png';
 import AnimatedBackground from './AnimatedBackground';
@@ -23,6 +23,21 @@ export default function Layout() {
         setMenuOpen(false);
     }, [location.pathname]);
 
+    // Close menu on Escape or outside click
+    useEffect(() => {
+        if (!menuOpen) return;
+        const handleKey = (e) => {
+            if (e.key === 'Escape') setMenuOpen(false);
+        };
+        const handleClick = () => setMenuOpen(false);
+        window.addEventListener('keydown', handleKey);
+        window.addEventListener('click', handleClick);
+        return () => {
+            window.removeEventListener('keydown', handleKey);
+            window.removeEventListener('click', handleClick);
+        };
+    }, [menuOpen]);
+
     // Scroll animation observer
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -36,7 +51,6 @@ export default function Layout() {
             { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
         );
 
-        // Small delay to let DOM render
         const timer = setTimeout(() => {
             const targets = document.querySelectorAll('.scroll-animate, .stagger-children');
             targets.forEach(el => observer.observe(el));
@@ -45,7 +59,10 @@ export default function Layout() {
         return () => { clearTimeout(timer); observer.disconnect(); };
     }, [location.pathname]);
 
-    const isActive = (path) => location.pathname === path ? 'active' : '';
+    const isActive = (path) => {
+        if (path === '/') return location.pathname === '/' ? 'active' : '';
+        return location.pathname.startsWith(path) ? 'active' : '';
+    };
 
     const navItems = [
         { path: '/', icon: <Home size={17} />, label: t('home') },
@@ -68,16 +85,19 @@ export default function Layout() {
     ];
 
     return (
-        <div>
+        <div className="app-shell">
             <AnimatedBackground />
-            <nav className="nav">
+            <nav className="nav" role="navigation" aria-label="Main navigation">
                 <div className="nav-inner">
                     <Link to="/" className="nav-logo">
-                        <img src={myLogo} alt="MDev" className="nav-logo-img" />
+                        <img src={myLogo} alt="MDev Logo" className="nav-logo-img" />
                         <span className="nav-logo-text">MDev</span>
                     </Link>
 
-                    <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
+                    <div
+                        className={`nav-links ${menuOpen ? 'open' : ''}`}
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         {navItems.map(item => (
                             <Link
                                 key={item.path}
@@ -90,13 +110,22 @@ export default function Layout() {
                         ))}
 
                         {user && (
-                            <Link
-                                to="/profile"
-                                className={`nav-link ${isActive('/profile')}`}
-                            >
-                                <User size={17} />
-                                {t('profile')}
-                            </Link>
+                            <>
+                                <Link
+                                    to="/results"
+                                    className={`nav-link ${isActive('/results')}`}
+                                >
+                                    <Award size={17} />
+                                    {t('myResults')}
+                                </Link>
+                                <Link
+                                    to="/profile"
+                                    className={`nav-link ${isActive('/profile')}`}
+                                >
+                                    <User size={17} />
+                                    {t('profile')}
+                                </Link>
+                            </>
                         )}
 
                         {isAdmin && (
@@ -166,6 +195,7 @@ export default function Layout() {
                                 setMenuOpen(v => !v);
                             }}
                             aria-label={menuOpen ? t('closeMenu') : t('openMenu')}
+                            aria-expanded={menuOpen}
                         >
                             {menuOpen ? <X size={20} /> : <Menu size={20} />}
                         </button>
@@ -174,7 +204,7 @@ export default function Layout() {
             </nav>
 
             {/* Marquee Banner */}
-            <div className="marquee-wrapper">
+            <div className="marquee-wrapper" aria-hidden="true">
                 <div className="marquee-track">
                     {[...marqueeItems, ...marqueeItems].map((item, i) => (
                         <div key={i} className="marquee-item">
@@ -190,6 +220,34 @@ export default function Layout() {
                     <Outlet />
                 </div>
             </main>
+
+            <footer className="site-footer">
+                <div className="container">
+                    <div className="footer-content">
+                        <div className="footer-brand">
+                            <div className="footer-logo-row">
+                                <img src={myLogo} alt="MDev Logo" className="footer-logo-img" />
+                                <h3>{t('platformTitle')}</h3>
+                            </div>
+                            <p>{t('footerDesc')}</p>
+                        </div>
+                        <div className="footer-links">
+                            <Link to="/modules">{t('modules')}</Link>
+                            <Link to="/rating">{t('rating')}</Link>
+                            <Link to="/terms">{t('rules')}</Link>
+                            {user && <Link to="/results">{t('myResults')}</Link>}
+                        </div>
+                        <div className="footer-contact">
+                            <p>📞 +998 88 981 02 06</p>
+                            <p>👨‍🏫 Muhammaddiyor Orifjonov</p>
+                            <p>🤖 @mdevsayt_bot</p>
+                        </div>
+                    </div>
+                    <div className="footer-bottom">
+                        <p>{t('allRights')}</p>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 }

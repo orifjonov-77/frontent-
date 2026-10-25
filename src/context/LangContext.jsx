@@ -285,6 +285,33 @@ const translations = {
         answerOrFile: "Javob matni yoki fayl yuklang",
         videoWatchedMsg: "Video ko'rildi!",
         videoWatchedDesc: "Endi testni yechishingiz va vazifani topshirishingiz mumkin.",
+        noHomework: "Ushbu dars uchun vazifa yo'q",
+        noTest: "Ushbu dars uchun test yo'q",
+
+        // Auth OTP flow
+        requestCodeBtn: "Kod olish",
+        phoneNotLinkedTitle: "Telegram botga ulaning",
+        phoneNotLinkedDesc: "Kodni olish uchun avval Telegram botimizga kirib telefon raqamingizni ulang.",
+        alreadyLinkedRetry: "Ulashdim, kod olish",
+        otpSentToTelegram: "6 xonali kod Telegram bot orqali yuborildi",
+        resendCodeIn: "Qayta yuborish:",
+        resendCode: "Kodni qayta yuborish",
+        completeRegistration: "Ro'yxatdan o'tishni yakunlang",
+        enterNamePrompt: "Platformada ko'rinadigan to'liq ismingizni kiriting",
+        completeBtn: "Ro'yxatdan o'tish",
+        invalidPhone: "Telefon raqamni to'liq kiriting (masalan: +998901234567)",
+
+        // Results & Profile
+        myResults: "Natijalarim",
+        resultsDesc: "Test, vazifa va imtihon natijalari",
+        myCourses: "Mening kurslarim",
+        certificates: "Sertifikatlarim",
+        noCoursesYet: "Hali kurslar yo'q",
+        noCertificatesYet: "Hali sertifikatlar yo'q",
+        downloadCert: "Yuklab olish",
+        noTestResults: "Hali test topshirilmagan",
+        noHwResults: "Hali vazifa topshirilmagan",
+        noExamResults: "Hali imtihon topshirilmagan",
     },
 
     en: {
@@ -548,6 +575,33 @@ const translations = {
         answerOrFile: "Submit answer text or upload a file",
         videoWatchedMsg: "Video watched!",
         videoWatchedDesc: "Now you can take the test and submit homework.",
+        noHomework: "No homework for this lesson",
+        noTest: "No test for this lesson",
+
+        // Auth OTP flow
+        requestCodeBtn: "Get code",
+        phoneNotLinkedTitle: "Link Telegram Bot",
+        phoneNotLinkedDesc: "To receive your verification code, open our Telegram bot and share your phone number first.",
+        alreadyLinkedRetry: "I linked my phone, get code",
+        otpSentToTelegram: "A 6-digit code was sent via Telegram bot",
+        resendCodeIn: "Resend in:",
+        resendCode: "Resend code",
+        completeRegistration: "Complete Registration",
+        enterNamePrompt: "Enter your full name to finish creating your account",
+        completeBtn: "Create account",
+        invalidPhone: "Please enter a valid phone number (e.g. +998901234567)",
+
+        // Results & Profile
+        myResults: "My Results",
+        resultsDesc: "Test, homework and exam results",
+        myCourses: "My Courses",
+        certificates: "My Certificates",
+        noCoursesYet: "No enrolled courses yet",
+        noCertificatesYet: "No certificates yet",
+        downloadCert: "Download",
+        noTestResults: "No tests taken yet",
+        noHwResults: "No homework submitted yet",
+        noExamResults: "No exams taken yet",
     },
 
     ru: {
@@ -811,6 +865,33 @@ const translations = {
         answerOrFile: "Отправьте текст ответа или загрузите файл",
         videoWatchedMsg: "Видео просмотрено!",
         videoWatchedDesc: "Теперь можно пройти тест и отправить задание.",
+        noHomework: "Для этого урока нет задания",
+        noTest: "Для этого урока нет теста",
+
+        // Auth OTP flow
+        requestCodeBtn: "Получить код",
+        phoneNotLinkedTitle: "Привяжите Telegram-бот",
+        phoneNotLinkedDesc: "Чтобы получить код, сначала откройте наш Telegram-бот и отправьте свой номер телефона.",
+        alreadyLinkedRetry: "Я привязал номер, получить код",
+        otpSentToTelegram: "6-значный код отправлен через Telegram-бот",
+        resendCodeIn: "Повторно через:",
+        resendCode: "Отправить код повторно",
+        completeRegistration: "Завершите регистрацию",
+        enterNamePrompt: "Введите ваше полное имя для завершения регистрации",
+        completeBtn: "Зарегистрироваться",
+        invalidPhone: "Введите корректный номер телефона (например: +998901234567)",
+
+        // Results & Profile
+        myResults: "Мои результаты",
+        resultsDesc: "Результаты тестов, заданий и экзаменов",
+        myCourses: "Мои курсы",
+        certificates: "Мои сертификаты",
+        noCoursesYet: "Пока нет курсов",
+        noCertificatesYet: "Пока нет сертификатов",
+        downloadCert: "Скачать",
+        noTestResults: "Тесты ещё не пройдены",
+        noHwResults: "Задания ещё не сданы",
+        noExamResults: "Экзамены ещё не сданы",
     }
 };
 

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { coursesAPI } from '../api/client';
 import { getModulePrice } from '../config/prices';
-import { Play, Lock, CheckCircle, Clock, FileText, Gamepad2, BookOpen, ArrowLeft, ChevronDown, CreditCard, LogIn } from 'lucide-react';
+import { Play, Lock, CheckCircle, Clock, FileText, Gamepad2, BookOpen, ArrowLeft, ChevronDown, CreditCard, LogIn, RefreshCw } from 'lucide-react';
 import myLogo from '../assets/mylogo.png';
 import './CoursePage.css';
 
@@ -12,6 +12,7 @@ export default function CoursePage() {
     const { courseId } = useParams();
     const [course, setCourse] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
     const [expandedLesson, setExpandedLesson] = useState(null);
     const { user } = useAuth();
     const { t } = useLang();
@@ -19,17 +20,36 @@ export default function CoursePage() {
     useEffect(() => { loadCourse(); }, [courseId]);
 
     const loadCourse = async () => {
+        setLoading(true);
+        setError(false);
         try {
             const res = await coursesAPI.getOne(courseId);
             setCourse(res.data);
-        } catch (err) { console.error(err); }
-        setLoading(false);
+        } catch (err) {
+            console.error(err);
+            setError(true);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const modulePrice = course ? getModulePrice(course.module_name, course.module_price) : 0;
 
     if (loading) return <div className="page-loader"><div className="branded-loader"><img src={myLogo} alt="MDev" className="branded-loader-logo" /><span className="branded-loader-text">MDev...</span><div className="branded-loader-dots"><span></span><span></span><span></span></div></div></div>;
-    if (!course) return <div className="container"><p>{t('courseNotFound')}</p></div>;
+    if (error || !course) {
+        return (
+            <div className="course-page container animate-fade">
+                <Link to="/modules" className="back-link"><ArrowLeft size={16} /> {t('backToModules')}</Link>
+                <div className="card" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
+                    <h2 style={{ marginBottom: '0.5rem' }}>⚠️ {error ? t('loadError') : t('courseNotFound')}</h2>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>{t('loadErrorDesc')}</p>
+                    <button onClick={loadCourse} className="btn btn-primary">
+                        <RefreshCw size={16} /> {t('retry')}
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="course-page container animate-fade">

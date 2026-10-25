@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || (
+  typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:8000'
+    : 'https://backend-5nr3.onrender.com'
+);
 
 const api = axios.create({
   baseURL: API_URL,
@@ -50,10 +54,13 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
+    const isAuthRequest = error.config?.url?.includes('/auth/');
+    if (error.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -63,6 +70,8 @@ export const clearApiCache = () => apiCache.clear();
 
 // Auth
 export const authAPI = {
+  requestCode: (data) => api.post('/auth/request-code', data),
+  verifyCode: (data) => api.post('/auth/verify-code', data),
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
   me: () => api.get('/auth/me'),
@@ -72,7 +81,8 @@ export const authAPI = {
 export const profileAPI = {
   get: () => api.get('/profile'),
   update: (data) => api.patch('/profile', data),
-  courses: () => api.get('/profile/courses'),
+  courses: () => api.get('/profile/my-courses'),
+  activity: () => api.get('/profile/activity'),
 };
 
 // Courses
