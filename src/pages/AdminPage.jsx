@@ -372,6 +372,8 @@ export default function AdminPage() {
         { id: 'payments', icon: <CreditCard size={16} />, label: "To'lovlar" },
         { id: 'content', icon: <BookOpen size={16} />, label: 'Kontent' },
         { id: 'homework', icon: <FileText size={16} />, label: 'Vazifalar' },
+        { id: 'certificates', icon: <Award size={16} />, label: 'Sertifikatlar' },
+        { id: 'chat', icon: <MessageCircle size={16} />, label: 'Chat' },
     ];
 
     const contentTabs = [

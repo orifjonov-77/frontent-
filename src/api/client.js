@@ -110,7 +110,8 @@ export const homeworkAPI = {
     // Support FormData for file upload
     if (data instanceof FormData) {
       return api.post(`/homework/${hwId}/submit`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': undefined },
+        timeout: 60000,
       });
     }
     // Legacy: JSON body (convert to FormData)
@@ -118,14 +119,16 @@ export const homeworkAPI = {
     if (data.answer_text) fd.append('answer_text', data.answer_text);
     if (data.file_url) fd.append('file_url', data.file_url);
     return api.post(`/homework/${hwId}/submit`, fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: { 'Content-Type': undefined },
+      timeout: 60000,
     });
   },
   uploadFile: (hwId, file) => {
     const fd = new FormData();
     fd.append('file', file);
     return api.post(`/homework/${hwId}/upload`, fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: { 'Content-Type': undefined },
+      timeout: 60000,
     });
   },
   getStatus: (hwId) => api.get(`/homework/${hwId}/status`, { params: { _t: Date.now() } }),
@@ -143,7 +146,8 @@ export const examsAPI = {
 export const paymentsAPI = {
   getCardInfo: () => api.get('/payments/card-info'),
   submitCheck: (formData) => api.post('/payments/submit-check', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+    headers: { 'Content-Type': undefined },
+    timeout: 60000,
   }),
   getMy: () => api.get('/payments/my'),
 };

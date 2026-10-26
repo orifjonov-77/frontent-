@@ -27,7 +27,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      navigate('/modules', { replace: true });
+      navigate(user.role === 'admin' ? '/admin' : '/modules', { replace: true });
     }
   }, [user, navigate]);
 
@@ -49,6 +49,12 @@ export default function LoginPage() {
         phone: cleanPhone(phone),
         full_name: fullName.trim() || null,
       });
+      if (res.data.access_token && res.data.user) {
+        login(res.data.access_token, res.data.user);
+        toast.success(t('welcome'));
+        navigate(res.data.user.role === 'admin' ? '/admin' : '/modules');
+        return;
+      }
       if (res.data.bot_link) {
         setBotLink(res.data.bot_link);
       }
@@ -80,7 +86,7 @@ export default function LoginPage() {
       });
       login(res.data.access_token, res.data.user);
       toast.success(t('welcome'));
-      navigate('/modules');
+      navigate(res.data.user?.role === 'admin' ? '/admin' : '/modules');
     } catch (err) {
       const msg = err.response?.data?.detail || t('wrongCode');
       setError(msg);
@@ -105,7 +111,7 @@ export default function LoginPage() {
       const res = await authAPI.login({ phone: cleanPhone(phone) });
       login(res.data.access_token, res.data.user);
       toast.success(t('welcome'));
-      navigate('/modules');
+      navigate(res.data.user?.role === 'admin' ? '/admin' : '/modules');
     } catch (err) {
       const msg = err.response?.data?.detail || t('errorOccurred');
       setError(msg);
