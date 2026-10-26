@@ -53,10 +53,13 @@ export default function LoginPage() {
       if (res.data.bot_link) {
         setBotLink(res.data.bot_link);
       }
-      setCodeSent(Boolean(res.data.linked));
-      if (res.data.linked) {
-        toast.success('Tasdiqlash kodi @mdevsayt_bot ga yuborildi!');
-      }
+      const isLinked = Boolean(res.data.linked);
+      setCodeSent(isLinked);
+      toast.success(
+        isLinked
+          ? '📲 Telegram botga (@mdevsayt_bot) 6 xonali kod yuborildi! Uni kiriting.'
+          : '📲 @mdevsayt_bot ga o\'tib 6 xonali kodni oling va kiriting!'
+      );
       setStep(2);
     } catch (err) {
       const msg = err.response?.data?.detail || t('errorOccurred');
@@ -195,12 +198,12 @@ export default function LoginPage() {
             <div className="bot-instructions">
               <Bot size={34} className="bot-icon" />
               <h3>@mdevsayt_bot</h3>
-              {codeSent ? (
-                <p style={{ color: 'var(--success)', fontWeight: 600, marginBottom: '0.5rem' }}>
-                  <CheckCircle size={15} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-                  6 xonali kod Telegram botingizga yuborildi!
-                </p>
-              ) : null}
+              <p style={{ color: 'var(--success)', fontWeight: 600, marginBottom: '0.5rem' }}>
+                <CheckCircle size={15} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                {codeSent
+                  ? 'Telegram botga (@mdevsayt_bot) 6 xonali kod yuborildi! Kodni kiriting:'
+                  : 'Telegram botdan (@mdevsayt_bot) 6 xonali kodni oling va pastga kiriting:'}
+              </p>
               <div className="bot-steps-list">
                 <p>1. Quyidagi tugmani bosib <b>@mdevsayt_bot</b> ga o'ting</p>
                 <p>2. Botda <b>"📱 Telefon raqamni ulash"</b> tugmasini bosing</p>

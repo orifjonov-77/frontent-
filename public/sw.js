@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mdev-v1';
+const CACHE_NAME = 'mdev-v3';
 const STATIC_ASSETS = [
     '/',
     '/logo.png',
@@ -32,7 +32,7 @@ self.addEventListener('fetch', (event) => {
 
     // Skip non-GET and API requests
     if (request.method !== 'GET') return;
-    if (request.url.includes('/api/') || request.url.includes('teachingback.onrender.com')) return;
+    if (request.url.includes('/api/') || request.url.includes('onrender.com')) return;
 
     event.respondWith(
         fetch(request)
