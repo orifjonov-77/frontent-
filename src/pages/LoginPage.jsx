@@ -4,13 +4,13 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { useToast } from '../context/ToastContext';
 import { authAPI } from '../api/client';
-import { Phone, Key, User, Loader, ArrowRight, Bot, LogIn, UserPlus } from 'lucide-react';
+import { Phone, Key, User, Loader, ArrowRight, Bot, LogIn, UserPlus, CheckCircle } from 'lucide-react';
 import myLogo from '../assets/mylogo.png';
 import './LoginPage.css';
 
 export default function LoginPage() {
-  // mode: 'register' (Ro'yxatdan o'tish: Ism + Nomer -> @mdevsayt_bot -> Kod)
-  //       'login'    (Kirish: faqat Nomer -> darhol kiradi!)
+  // mode: 'register' (Ro'yxatdan o'tish: Ism + Nomer -> @mdevsayt_bot -> 6 xonali Kod)
+  //       'login'    (Kirish: Nomer -> @mdevsayt_bot -> 6 xonali Kod)
   const [mode, setMode] = useState('register');
   const [step, setStep] = useState(1);
   const [fullName, setFullName] = useState('');
@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [botLink, setBotLink] = useState('https://t.me/mdevsayt_bot?start=link');
+  const [codeSent, setCodeSent] = useState(false);
 
   const { user, login } = useAuth();
   const navigate = useNavigate();
@@ -33,8 +34,8 @@ export default function LoginPage() {
 
   const cleanPhone = (val) => val.replace(/[^\d+]/g, '');
 
-  // 1) RO'YXATDAN O'TISH — 1-QADAM: Ism va Nomerni yuborish
-  const handleRegisterStep1 = async (e) => {
+  // 1-QADAM: Ism + Nomer (Ro'yxatdan o'tish) YOKI faqat Nomer (Kirish) -> Botga kod yuborish
+  const handleStep1 = async (e) => {
     e.preventDefault();
     const digitsOnly = phone.replace(/\D/g, '');
     if (digitsOnly.length < 9) {
@@ -47,16 +48,14 @@ export default function LoginPage() {
     try {
       const res = await authAPI.register({
         phone: cleanPhone(phone),
-        full_name: fullName.trim() || null,
+        full_name: mode === 'register' ? (fullName.trim() || null) : null,
       });
-      if (res.data.access_token && res.data.user) {
-        login(res.data.access_token, res.data.user);
-        toast.success(t('welcome'));
-        navigate(res.data.user.role === 'admin' ? '/admin' : '/modules');
-        return;
-      }
       if (res.data.bot_link) {
         setBotLink(res.data.bot_link);
+      }
+      setCodeSent(Boolean(res.data.linked));
+      if (res.data.linked) {
+        toast.success('Tasdiqlash kodi @mdevsayt_bot ga yuborildi!');
       }
       setStep(2);
     } catch (err) {
@@ -68,7 +67,7 @@ export default function LoginPage() {
     }
   };
 
-  // 2) RO'YXATDAN O'TISH — 2-QADAM: @mdevsayt_bot bergan 6 xonali kodni kiritish
+  // 2-QADAM: @mdevsayt_bot ga kelgan 6 xonali kodni tekshirib kirish (100% xavfsiz)
   const handleVerifyCode = async (e) => {
     e.preventDefault();
     if (code.trim().length < 4) {
@@ -82,38 +81,13 @@ export default function LoginPage() {
       const res = await authAPI.register({
         phone: cleanPhone(phone),
         code: code.trim(),
-        full_name: fullName.trim() || undefined,
+        full_name: mode === 'register' ? (fullName.trim() || undefined) : undefined,
       });
       login(res.data.access_token, res.data.user);
       toast.success(t('welcome'));
       navigate(res.data.user?.role === 'admin' ? '/admin' : '/modules');
     } catch (err) {
       const msg = err.response?.data?.detail || t('wrongCode');
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 3) KIRISH (Oldin ro'yxatdan o'tgan bo'lsa): Faqat nomerni kiritib darhol kirish
-  const handleQuickLogin = async (e) => {
-    e.preventDefault();
-    const digitsOnly = phone.replace(/\D/g, '');
-    if (digitsOnly.length < 9) {
-      setError(t('invalidPhone'));
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    try {
-      const res = await authAPI.login({ phone: cleanPhone(phone) });
-      login(res.data.access_token, res.data.user);
-      toast.success(t('welcome'));
-      navigate(res.data.user?.role === 'admin' ? '/admin' : '/modules');
-    } catch (err) {
-      const msg = err.response?.data?.detail || t('errorOccurred');
       setError(msg);
       toast.error(msg);
     } finally {
@@ -140,6 +114,7 @@ export default function LoginPage() {
             onClick={() => {
               setMode('register');
               setStep(1);
+              setCode('');
               setError('');
             }}
           >
@@ -151,6 +126,8 @@ export default function LoginPage() {
             className={`auth-mode-tab ${mode === 'login' ? 'active' : ''}`}
             onClick={() => {
               setMode('login');
+              setStep(1);
+              setCode('');
               setError('');
             }}
           >
@@ -161,29 +138,31 @@ export default function LoginPage() {
 
         {error ? <div className="login-error" role="alert">{error}</div> : null}
 
-        {/* ====== TAB 1: RO'YXATDAN O'TISH ====== */}
-        {mode === 'register' && step === 1 && (
-          <form onSubmit={handleRegisterStep1} className="login-form">
-            <div className="form-group">
-              <label htmlFor="reg-name">
-                <User size={14} /> <span>{t('yourName')}</span>
-              </label>
-              <input
-                id="reg-name"
-                className="input"
-                placeholder={t('yourName')}
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
-            </div>
+        {/* ====== 1-QADAM: Ro'yxatdan o'tish (Ism + Nomer) YOKI Kirish (Nomer) ====== */}
+        {step === 1 && (
+          <form onSubmit={handleStep1} className="login-form">
+            {mode === 'register' && (
+              <div className="form-group">
+                <label htmlFor="auth-name">
+                  <User size={14} /> <span>{t('yourName')}</span>
+                </label>
+                <input
+                  id="auth-name"
+                  className="input"
+                  placeholder={t('yourName')}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+              </div>
+            )}
 
             <div className="form-group">
-              <label htmlFor="reg-phone">
+              <label htmlFor="auth-phone">
                 <Phone size={14} /> <span>{t('phoneNumber')}</span>
               </label>
               <input
-                id="reg-phone"
+                id="auth-phone"
                 type="tel"
                 className="input"
                 placeholder="+998 90 123 45 67"
@@ -210,17 +189,22 @@ export default function LoginPage() {
           </form>
         )}
 
-        {/* ====== TAB 1 (2-QADAM): @mdevsayt_bot + Kod kiritish ====== */}
-        {mode === 'register' && step === 2 && (
+        {/* ====== 2-QADAM: @mdevsayt_bot + 6 xonali kodni kiritish ====== */}
+        {step === 2 && (
           <div className="login-step2">
             <div className="bot-instructions">
               <Bot size={34} className="bot-icon" />
               <h3>@mdevsayt_bot</h3>
+              {codeSent ? (
+                <p style={{ color: 'var(--success)', fontWeight: 600, marginBottom: '0.5rem' }}>
+                  <CheckCircle size={15} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                  6 xonali kod Telegram botingizga yuborildi!
+                </p>
+              ) : null}
               <div className="bot-steps-list">
                 <p>1. Quyidagi tugmani bosib <b>@mdevsayt_bot</b> ga o'ting</p>
-                <p>2. Botda <b>"📱 Telefon raqamni ulash"</b> tugmasini bosib raqamingizni jo'nating</p>
-                <p>3. Bot sizga 6 xonali kod beradi</p>
-                <p>4. Kodni pastga kiriting</p>
+                <p>2. Botda <b>"📱 Telefon raqamni ulash"</b> tugmasini bosing</p>
+                <p>3. Bot sizga bergan <b>6 xonali kodni</b> pastga kiriting</p>
               </div>
               <a
                 href={botLink}
@@ -235,11 +219,11 @@ export default function LoginPage() {
 
             <form onSubmit={handleVerifyCode} className="login-form">
               <div className="form-group">
-                <label htmlFor="reg-code">
+                <label htmlFor="auth-code">
                   <Key size={14} /> <span>{t('enterCode')}</span>
                 </label>
                 <input
-                  id="reg-code"
+                  id="auth-code"
                   type="text"
                   inputMode="numeric"
                   className="input code-input"
@@ -248,6 +232,7 @@ export default function LoginPage() {
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                   required
+                  autoFocus
                 />
               </div>
 
@@ -255,7 +240,7 @@ export default function LoginPage() {
                 type="submit"
                 className="btn btn-primary btn-lg"
                 style={{ width: '100%' }}
-                disabled={loading}
+                disabled={loading || code.length < 4}
               >
                 {loading ? (
                   <Loader size={18} className="spin" />
@@ -272,6 +257,7 @@ export default function LoginPage() {
                 style={{ width: '100%' }}
                 onClick={() => {
                   setStep(1);
+                  setCode('');
                   setError('');
                 }}
               >
@@ -279,42 +265,6 @@ export default function LoginPage() {
               </button>
             </form>
           </div>
-        )}
-
-        {/* ====== TAB 2: TEZKOR KIRISH (Faqat telefon raqam bilan) ====== */}
-        {mode === 'login' && (
-          <form onSubmit={handleQuickLogin} className="login-form">
-            <div className="form-group">
-              <label htmlFor="quick-login-phone">
-                <Phone size={14} /> <span>{t('phoneNumber')}</span>
-              </label>
-              <input
-                id="quick-login-phone"
-                type="tel"
-                className="input"
-                placeholder="+998 90 123 45 67"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                autoFocus
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary btn-lg"
-              style={{ width: '100%' }}
-              disabled={loading}
-            >
-              {loading ? (
-                <Loader size={18} className="spin" />
-              ) : (
-                <>
-                  <LogIn size={18} /> <span>{t('login')}</span>
-                </>
-              )}
-            </button>
-          </form>
         )}
       </div>
     </div>
