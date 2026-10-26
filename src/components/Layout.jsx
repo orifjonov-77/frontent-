@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLang } from '../context/LangContext';
 import {
     Home, BookOpen, Trophy, User, Shield,
-    Sun, Moon, Menu, X, LogOut, LogIn, FileText, Globe, Award
+    Sun, Moon, Menu, X, LogOut, LogIn, FileText, Globe, Award, Download, Smartphone, Monitor, CheckCircle
 } from 'lucide-react';
 import myLogo from '../assets/mylogo.png';
 import AnimatedBackground from './AnimatedBackground';
@@ -17,6 +17,51 @@ export default function Layout() {
     const { t, nextLang } = useLang();
     const location = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const [isInstalled, setIsInstalled] = useState(false);
+    const [installGuideOpen, setInstallGuideOpen] = useState(false);
+
+    // PWA Install prompt listener
+    useEffect(() => {
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            setIsInstalled(true);
+        }
+
+        const handleBeforeInstallPrompt = (e) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+
+        const handleAppInstalled = () => {
+            setIsInstalled(true);
+            setDeferredPrompt(null);
+            setInstallGuideOpen(false);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.addEventListener('appinstalled', handleAppInstalled);
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+            window.removeEventListener('appinstalled', handleAppInstalled);
+        };
+    }, []);
+
+    const handleDownloadApp = async () => {
+        if (deferredPrompt) {
+            try {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    setDeferredPrompt(null);
+                    setIsInstalled(true);
+                }
+            } catch {
+                setInstallGuideOpen(true);
+            }
+        } else {
+            setInstallGuideOpen(true);
+        }
+    };
 
     // Close menu on route change
     useEffect(() => {
@@ -147,9 +192,35 @@ export default function Layout() {
                                 {t('login')}
                             </Link>
                         )}
+
+                        {!isInstalled && (
+                            <button
+                                type="button"
+                                className="nav-link download-mobile-link"
+                                onClick={() => {
+                                    setMenuOpen(false);
+                                    handleDownloadApp();
+                                }}
+                            >
+                                <Download size={17} />
+                                <span>Ilovani yuklab olish (Download)</span>
+                            </button>
+                        )}
                     </div>
 
                     <div className="nav-actions">
+                        {!isInstalled && (
+                            <button
+                                type="button"
+                                className="btn btn-primary btn-sm nav-download-btn"
+                                onClick={handleDownloadApp}
+                                title="MDev ilovasini telefon yoki kompyuterga yuklab olish"
+                            >
+                                <Download size={15} />
+                                <span className="download-btn-label">Yuklab olish</span>
+                            </button>
+                        )}
+
                         <button
                             className="btn-icon lang-toggle"
                             onClick={nextLang}
@@ -248,6 +319,75 @@ export default function Layout() {
                     </div>
                 </div>
             </footer>
+
+            {/* Install App Guide Modal */}
+            {installGuideOpen && (
+                <div className="modal-overlay" onClick={() => setInstallGuideOpen(false)}>
+                    <div className="modal-content install-modal-box" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            className="install-modal-close"
+                            onClick={() => setInstallGuideOpen(false)}
+                            aria-label="Yopish"
+                        >
+                            <X size={18} />
+                        </button>
+                        <div className="install-modal-header">
+                            <img src={myLogo} alt="MDev" className="install-modal-logo" />
+                            <div>
+                                <h3>📲 MDev Ilovasini Yuklab Olish</h3>
+                                <p>Saytni telefon yoki kompyuteringizga ilova sifatida o'rnating!</p>
+                            </div>
+                        </div>
+
+                        <div className="install-steps-grid">
+                            <div className="install-step-card">
+                                <div className="install-step-title">
+                                    <Smartphone size={18} />
+                                    <strong>Android / Samsung / Xiaomi</strong>
+                                </div>
+                                <ol>
+                                    <li>Brauzerning o'ng tepa burchagidagi <strong>⋮ (3 nuqta)</strong> tugmasini bosing.</li>
+                                    <li><strong>«Ilovani o'rnatish»</strong> (<em>Установить приложение</em> / <em>Add to Home screen</em>) ni tanlang.</li>
+                                </ol>
+                            </div>
+
+                            <div className="install-step-card">
+                                <div className="install-step-title">
+                                    <Smartphone size={18} />
+                                    <strong>iPhone / iPad (Safari)</strong>
+                                </div>
+                                <ol>
+                                    <li>Pastdagi <strong>Ulashish (Share ⬆️)</strong> tugmasini bosing.</li>
+                                    <li>Ro'yxatdan <strong>«Asosiy ekranga qo'shish»</strong> (<em>На экран «Домой»</em> / <em>Add to Home Screen</em>) ni bosing.</li>
+                                </ol>
+                            </div>
+
+                            <div className="install-step-card">
+                                <div className="install-step-title">
+                                    <Monitor size={18} />
+                                    <strong>Kompyuter / Noutbuk (Chrome / Edge)</strong>
+                                </div>
+                                <ol>
+                                    <li>Manzil qatori (URL) o'ng tomonidagi <strong>📥 O'rnatish (Install MDev)</strong> belgisini bosing.</li>
+                                    <li>Tasdiqlash oynasida <strong>«O'rnatish» (Install)</strong> tugmasini bosing.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <div className="modal-actions" style={{ marginTop: '1.25rem' }}>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                style={{ width: '100%' }}
+                                onClick={() => setInstallGuideOpen(false)}
+                            >
+                                <CheckCircle size={16} /> Tushunarli
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
