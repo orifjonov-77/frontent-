@@ -308,6 +308,14 @@ export default function AdminPage() {
                     if (!reason) { setSubmitting(false); return; }
                     await adminAPI.reviewPayment(args[0], { status: 'rejected', admin_comment: reason }); break;
                 }
+                case 'grantModule': {
+                    await adminAPI.grantModule(args[0], args[1]);
+                    if (studentDetail && studentDetail.id === args[0]) {
+                        const res = await adminAPI.getStudent(args[0]);
+                        setStudentDetail(res.data);
+                    }
+                    break;
+                }
                 case 'gradeHomework': await adminAPI.gradeHomework(args[0], { score: parseInt(args[1]), admin_comment: args[2] }); break;
                 case 'deleteStudent': if (confirm("O'chirishni tasdiqlang")) await adminAPI.deleteStudent(args[0]); break;
                 case 'toggleStudent': await adminAPI.updateStudent(args[0], { is_active: args[1] }); break;
@@ -696,12 +704,14 @@ export default function AdminPage() {
                                                     )}
                                                 </td>
                                                 <td>
-                                                    {(p.status === 'pending' || p.status === 'auto_approved') && (
-                                                        <div className="action-btns">
-                                                            <button className="btn btn-sm btn-success" onClick={() => handleAction('approvePayment', p.id)}><Check size={14} /> Ha</button>
-                                                            <button className="btn btn-sm btn-danger" onClick={() => handleAction('rejectPayment', p.id)}><X size={14} /> Yo'q</button>
-                                                        </div>
-                                                    )}
+                                                    <div className="action-btns">
+                                                        {p.status !== 'approved' && (
+                                                            <button className="btn btn-sm btn-success" onClick={() => handleAction('approvePayment', p.id)}><Check size={14} /> Tasdiqlash (Ha)</button>
+                                                        )}
+                                                        {p.status !== 'rejected' && (
+                                                            <button className="btn btn-sm btn-danger" onClick={() => handleAction('rejectPayment', p.id)}><X size={14} /> Rad etish</button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -1302,6 +1312,26 @@ export default function AdminPage() {
                                 {studentDetail.telegram_link && (
                                     <div className="detail-item"><span>Telegram:</span><a href={studentDetail.telegram_link} target="_blank" rel="noopener" className="btn btn-sm btn-info">💬 Telegram <ExternalLink size={10} /></a></div>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* Grant Module / Unlock Course */}
+                        <div className="detail-section">
+                            <h4>🔓 Kurs / Modulni ochib berish</h4>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                                {modules.map(m => {
+                                    const isAlreadyPaid = studentDetail.payments?.some(p => p.module_id === m.id && p.status === 'approved');
+                                    return (
+                                        <button
+                                            key={m.id}
+                                            className={`btn btn-sm ${isAlreadyPaid ? 'btn-success' : 'btn-primary'}`}
+                                            disabled={submitting}
+                                            onClick={() => handleAction('grantModule', studentDetail.id, m.id)}
+                                        >
+                                            {isAlreadyPaid ? `✅ ${m.name} (Ochiq)` : `🔓 ${m.name} ni ochish`}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 

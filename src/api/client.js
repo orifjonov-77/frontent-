@@ -12,9 +12,10 @@ const api = axios.create({
   timeout: 15000,
 });
 
-// In-memory GET cache (60 sekund — tezlik uchun)
+// In-memory GET cache (short TTL, bypassed for dynamic course/payment/admin endpoints)
 const apiCache = new Map();
-const CACHE_TTL = 60000;
+const CACHE_TTL = 5000;
+const NO_CACHE_PREFIXES = ['/courses', '/payments', '/admin', '/profile', '/homework', '/tests', '/chat', '/auth'];
 
 // Auto-attach token
 api.interceptors.request.use((config) => {
@@ -22,8 +23,9 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  if (config.method === 'get') {
-    const cacheKey = config.url + JSON.stringify(config.params || {});
+  const shouldSkipCache = NO_CACHE_PREFIXES.some((p) => config.url?.startsWith(p));
+  if (config.method === 'get' && !shouldSkipCache) {
+    const cacheKey = `${token || 'anon'}:${config.url}${JSON.stringify(config.params || {})}`;
     const cached = apiCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       config.adapter = () => Promise.resolve({
@@ -41,8 +43,10 @@ api.interceptors.request.use((config) => {
 // Handle responses
 api.interceptors.response.use(
   (response) => {
-    if (response.config.method === 'get' && response.status === 200) {
-      const cacheKey = response.config.url + JSON.stringify(response.config.params || {});
+    const shouldSkipCache = NO_CACHE_PREFIXES.some((p) => response.config.url?.startsWith(p));
+    if (response.config.method === 'get' && response.status === 200 && !shouldSkipCache) {
+      const token = localStorage.getItem('token');
+      const cacheKey = `${token || 'anon'}:${response.config.url}${JSON.stringify(response.config.params || {})}`;
       apiCache.set(cacheKey, { data: response.data, timestamp: Date.now() });
       if (apiCache.size > 100) {
         const now = Date.now();
@@ -192,6 +196,7 @@ export const adminAPI = {
   getPayments: (status) => api.get('/admin/payments', { params: { ...(status ? { status } : {}), _t: Date.now() } }),
   reviewPayment: (id, data) => api.patch(`/admin/payments/${id}/review`, data),
   grantCourse: (userId, courseId) => api.post(`/admin/grant-course?user_id=${userId}&course_id=${courseId}`),
+  grantModule: (userId, moduleId) => api.post(`/admin/grant-module?user_id=${userId}&module_id=${moduleId}`),
   getCertificates: () => api.get('/admin/certificates'),
   sendCertificate: (userId, title, fileUrl, description) => api.post(`/admin/certificates?user_id=${userId}&title=${encodeURIComponent(title)}&file_url=${encodeURIComponent(fileUrl)}&description=${encodeURIComponent(description || '')}`),
   deleteCertificate: (id) => api.delete(`/admin/certificates/${id}`),

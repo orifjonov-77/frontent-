@@ -88,13 +88,29 @@ export default function ModulesPage() {
                                         {icons[i % 5]}
                                     </div>
                                     <div className="module-info">
-                                        <h2>{m.name}</h2>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                            <h2>{m.name}</h2>
+                                            {m.is_paid ? (
+                                                <span className="badge badge-success" style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem' }}>
+                                                    ✅ {t('paid')}
+                                                </span>
+                                            ) : (
+                                                <span className="badge badge-info" style={{ fontSize: '0.8rem', padding: '0.3rem 0.7rem' }}>
+                                                    💳 {m.price?.toLocaleString()} {t('som')}
+                                                </span>
+                                            )}
+                                        </div>
                                         <p>{m.description}</p>
-                                        <div className="module-stats">
+                                        <div className="module-stats" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                                             <span className="module-lessons-badge">
                                                 <Layers size={13} />
                                                 {m.courses?.reduce((sum, c) => sum + (c.lessons_count || 0), 0)} {t('lesson')}
                                             </span>
+                                            {!m.is_paid && (
+                                                <Link to={`/payment/${m.id}`} className="btn btn-primary btn-sm" style={{ padding: '0.35rem 0.85rem', fontSize: '0.8rem' }}>
+                                                    💳 {t('pay')} ({m.price?.toLocaleString()} {t('som')})
+                                                </Link>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

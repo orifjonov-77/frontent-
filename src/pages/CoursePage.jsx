@@ -56,7 +56,14 @@ export default function CoursePage() {
             <Link to="/modules" className="back-link"><ArrowLeft size={16} /> {t('backToModules')}</Link>
 
             <div className="course-header">
-                <h1>{course.name}</h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <h1>{course.name}</h1>
+                    {course.is_paid && (
+                        <span className="badge badge-success" style={{ fontSize: '0.85rem', padding: '0.35rem 0.75rem' }}>
+                            ✅ {t('paid')}
+                        </span>
+                    )}
+                </div>
                 <p>{course.description}</p>
             </div>
 
