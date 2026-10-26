@@ -69,8 +69,37 @@ export default function AdminPage() {
     const [chatReply, setChatReply] = useState('');
     const [chatLoading, setChatLoading] = useState(false);
 
-    // Check image modal
+    // Check image modal & Homework preview modal
     const [checkImageUrl, setCheckImageUrl] = useState(null);
+    const [hwPreview, setHwPreview] = useState(null);
+
+    const resolveFileUrl = (url) => {
+        if (!url) return '';
+        const trimmed = String(url).trim();
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
+            return trimmed;
+        }
+        if (trimmed.startsWith('/')) {
+            return `${import.meta.env.VITE_API_URL || ''}${trimmed}`;
+        }
+        return `https://${trimmed}`;
+    };
+
+    const isImageFile = (url) => {
+        if (!url) return false;
+        const u = String(url).toLowerCase();
+        if (u.startsWith('data:image/')) return true;
+        if (u.includes('/image/upload/')) return true;
+        if (u.includes('encrypted-tbn0.gstatic.com/images')) return true;
+        return /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|#|$)/i.test(u);
+    };
+
+    const isPdfFile = (url) => {
+        if (!url) return false;
+        const u = String(url).toLowerCase();
+        if (u.startsWith('data:application/pdf')) return true;
+        return /\.pdf(\?|#|$)/i.test(u);
+    };
 
     // Test questions form
     const [testQuestions, setTestQuestions] = useState([]);
@@ -895,12 +924,46 @@ export default function AdminPage() {
                                             <tr key={s.id}>
                                                 <td><strong>{s.user_name}</strong></td>
                                                 <td>{s.homework_title}</td>
-                                                <td className="td-text">{s.answer_text ? s.answer_text.slice(0, 150) : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
+                                                <td className="td-text">
+                                                    {s.answer_text ? (
+                                                        <span
+                                                            onClick={() => setHwPreview(s)}
+                                                            style={{ cursor: 'pointer', borderBottom: '1px dashed var(--border-color)' }}
+                                                            title="To'liq ko'rish uchun bosing"
+                                                        >
+                                                            {s.answer_text.slice(0, 150)}{s.answer_text.length > 150 ? '...' : ''}
+                                                        </span>
+                                                    ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                                                </td>
                                                 <td>
                                                     {s.file_url ? (
-                                                        <a href={`${import.meta.env.VITE_API_URL}${s.file_url}`} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
-                                                            <Eye size={14} /> Fayl
-                                                        </a>
+                                                        <div className="action-btns">
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm btn-secondary"
+                                                                onClick={() => setHwPreview(s)}
+                                                                title="Sayt ichida ko'rish"
+                                                            >
+                                                                <Eye size={14} /> Ko'rish
+                                                            </button>
+                                                            <a
+                                                                href={resolveFileUrl(s.file_url)}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="btn btn-sm btn-info"
+                                                                title="Yangi oynada ochish yoki yuklab olish"
+                                                            >
+                                                                <ExternalLink size={14} /> Ochish
+                                                            </a>
+                                                        </div>
+                                                    ) : s.answer_text ? (
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-sm btn-secondary"
+                                                            onClick={() => setHwPreview(s)}
+                                                        >
+                                                            <Eye size={14} /> Matn
+                                                        </button>
                                                     ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                                                 </td>
                                                 <td className="td-sm">{s.submitted_at?.slice(0, 16).replace('T', ' ')}</td>
@@ -1654,7 +1717,74 @@ export default function AdminPage() {
                             <button className="modal-close" onClick={() => setCheckImageUrl(null)}><X size={18} /></button>
                         </div>
                         <div className="modal-body" style={{ textAlign: 'center', padding: '1rem' }}>
-                            <img src={checkImageUrl} alt="To'lov cheki" style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: '8px' }} />
+                            <img src={resolveFileUrl(checkImageUrl)} alt="To'lov cheki" style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: '8px' }} />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Homework Submission Preview Modal (Text, Image, PDF, Word/Zip, or Link) */}
+            {hwPreview && (
+                <div className="modal-overlay" onClick={() => setHwPreview(null)}>
+                    <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '720px' }}>
+                        <div className="modal-header">
+                            <h3>📋 Vazifa: {hwPreview.user_name} — {hwPreview.homework_title}</h3>
+                            <button className="modal-close" onClick={() => setHwPreview(null)}><X size={18} /></button>
+                        </div>
+                        <div className="modal-body" style={{ padding: '1.25rem' }}>
+                            {hwPreview.answer_text && (
+                                <div className="card" style={{ padding: '1rem', marginBottom: '1rem', background: 'var(--bg-secondary, rgba(0,0,0,0.03))' }}>
+                                    <strong style={{ display: 'block', marginBottom: '0.4rem' }}>📝 O'quvchi yozgan javobi:</strong>
+                                    <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>{hwPreview.answer_text}</p>
+                                </div>
+                            )}
+
+                            {hwPreview.file_url && (() => {
+                                const fullUrl = resolveFileUrl(hwPreview.file_url);
+                                return (
+                                    <div style={{ textAlign: 'center' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                                            <strong>📎 Yuborilgan fayl / havola:</strong>
+                                            <a
+                                                href={fullUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn btn-primary btn-sm"
+                                                download
+                                            >
+                                                <ExternalLink size={14} /> Yangi oynada ochish / Yuklab olish
+                                            </a>
+                                        </div>
+
+                                        {isImageFile(fullUrl) ? (
+                                            <img
+                                                src={fullUrl}
+                                                alt="Vazifa fayli"
+                                                style={{ maxWidth: '100%', maxHeight: '60vh', borderRadius: '10px', border: '1px solid var(--border-color)' }}
+                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                            />
+                                        ) : isPdfFile(fullUrl) ? (
+                                            <iframe
+                                                src={fullUrl}
+                                                title="Vazifa PDF"
+                                                style={{ width: '100%', height: '60vh', borderRadius: '10px', border: '1px solid var(--border-color)' }}
+                                            />
+                                        ) : (
+                                            <div className="card" style={{ padding: '1.25rem', textAlign: 'left', wordBreak: 'break-all' }}>
+                                                <p style={{ marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>
+                                                    🔗 Manzil: <a href={fullUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>{fullUrl}</a>
+                                                </p>
+                                                <img
+                                                    src={fullUrl}
+                                                    alt=""
+                                                    style={{ maxWidth: '100%', maxHeight: '50vh', borderRadius: '8px', display: 'block', margin: '0 auto' }}
+                                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>

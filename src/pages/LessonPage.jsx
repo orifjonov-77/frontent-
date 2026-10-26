@@ -494,6 +494,30 @@ export default function LessonPage() {
 
                         {hwStatus?.submitted ? (
                             <div className="hw-result">
+                                {(hwStatus.answer_text || hwStatus.file_url) && (
+                                    <div className="card" style={{ padding: '0.85rem 1rem', marginBottom: '1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)' }}>
+                                        {hwStatus.answer_text && (
+                                            <p style={{ marginBottom: hwStatus.file_url ? '0.6rem' : 0, whiteSpace: 'pre-wrap' }}>
+                                                <strong>📝 Javobingiz:</strong> {hwStatus.answer_text}
+                                            </p>
+                                        )}
+                                        {hwStatus.file_url && (() => {
+                                            const fUrl = String(hwStatus.file_url).trim();
+                                            const resolved = (fUrl.startsWith('http://') || fUrl.startsWith('https://') || fUrl.startsWith('data:'))
+                                                ? fUrl
+                                                : fUrl.startsWith('/')
+                                                    ? `${import.meta.env.VITE_API_URL || ''}${fUrl}`
+                                                    : `https://${fUrl}`;
+                                            return (
+                                                <div>
+                                                    <a href={resolved} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
+                                                        📎 Yuborilgan fayl / havolani ko'rish
+                                                    </a>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                )}
                                 {hwStatus.is_graded ? (
                                     <>
                                         <div className="badge badge-success" style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}>
