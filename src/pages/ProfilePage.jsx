@@ -163,16 +163,28 @@ export default function ProfilePage() {
                                             <h4>🏆 {cert.title}</h4>
                                             {cert.description && <p>{cert.description}</p>}
                                         </div>
-                                        {cert.file_url && (
-                                            <a
-                                                href={cert.file_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="btn btn-primary btn-sm"
-                                            >
-                                                <ExternalLink size={14} /> {t('downloadCert')}
-                                            </a>
-                                        )}
+                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                            {cert.file_url && (
+                                                <a
+                                                    href={cert.file_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="btn btn-primary btn-sm"
+                                                >
+                                                    <ExternalLink size={14} /> 🖼 Rasm ({t('downloadCert')})
+                                                </a>
+                                            )}
+                                            {cert.pdf_url && (
+                                                <a
+                                                    href={cert.pdf_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="btn btn-secondary btn-sm"
+                                                >
+                                                    <ExternalLink size={14} /> 📄 PDF Yuklab olish
+                                                </a>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>

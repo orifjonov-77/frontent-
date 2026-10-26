@@ -15,7 +15,7 @@ const api = axios.create({
 // In-memory GET cache (short TTL, bypassed for dynamic course/payment/admin endpoints)
 const apiCache = new Map();
 const CACHE_TTL = 5000;
-const NO_CACHE_PREFIXES = ['/courses', '/payments', '/admin', '/profile', '/homework', '/tests', '/chat', '/auth'];
+const NO_CACHE_PREFIXES = ['/courses', '/payments', '/admin', '/profile', '/homework', '/tests', '/chat', '/auth', '/certificates', '/exams'];
 
 // Auto-attach token
 api.interceptors.request.use((config) => {
@@ -191,14 +191,32 @@ export const adminAPI = {
   deleteHomework: (id) => api.delete(`/admin/homework/${id}`),
   getHomeworkSubmissions: () => api.get('/admin/homework/submissions'),
   gradeHomework: (id, data) => api.patch(`/admin/homework/submissions/${id}/grade`, data),
+  getExams: (courseId) => api.get('/admin/exams', { params: courseId ? { course_id: courseId } : {} }),
   createExam: (data) => api.post('/admin/exams', data),
   deleteExam: (id) => api.delete(`/admin/exams/${id}`),
   getPayments: (status) => api.get('/admin/payments', { params: { ...(status ? { status } : {}), _t: Date.now() } }),
   reviewPayment: (id, data) => api.patch(`/admin/payments/${id}/review`, data),
   grantCourse: (userId, courseId) => api.post(`/admin/grant-course?user_id=${userId}&course_id=${courseId}`),
   grantModule: (userId, moduleId) => api.post(`/admin/grant-module?user_id=${userId}&module_id=${moduleId}`),
+  getCertificateApplications: () => api.get('/admin/certificate-applications'),
   getCertificates: () => api.get('/admin/certificates'),
-  sendCertificate: (userId, title, fileUrl, description) => api.post(`/admin/certificates?user_id=${userId}&title=${encodeURIComponent(title)}&file_url=${encodeURIComponent(fileUrl)}&description=${encodeURIComponent(description || '')}`),
+  sendCertificate: (dataOrUserId, title, fileUrl, description) => {
+    if (dataOrUserId instanceof FormData) {
+      return api.post('/admin/certificates', dataOrUserId, {
+        headers: { 'Content-Type': undefined },
+        timeout: 60000,
+      });
+    }
+    const fd = new FormData();
+    if (dataOrUserId) fd.append('user_id', dataOrUserId);
+    if (title) fd.append('title', title);
+    if (fileUrl) fd.append('file_url', fileUrl);
+    if (description) fd.append('description', description);
+    return api.post('/admin/certificates', fd, {
+      headers: { 'Content-Type': undefined },
+      timeout: 60000,
+    });
+  },
   deleteCertificate: (id) => api.delete(`/admin/certificates/${id}`),
   updateTest: (id, data) => api.put(`/admin/tests/${id}`, data),
   deleteTestByLesson: (lessonId) => api.delete(`/admin/tests/by-lesson/${lessonId}`),
@@ -225,9 +243,11 @@ export const bonusAPI = {
   useBonus: (lessonId) => api.post('/rating/use-bonus', { lesson_id: lessonId }),
 };
 
-// Student Certificates
+// Student Certificates & Course Certificate Exam
 export const certificatesAPI = {
   getMy: () => api.get('/certificates/my'),
+  getCourseStatus: (courseId) => api.get(`/certificates/course/${courseId}/status`),
+  submitCourseExam: (courseId, answers) => api.post(`/certificates/course/${courseId}/submit-exam`, { answers }),
 };
 
 export default api;

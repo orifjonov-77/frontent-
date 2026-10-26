@@ -79,6 +79,12 @@ export default function AdminPage() {
     const [existingModules, setExistingModules] = useState([]);
     const [existingCourses, setExistingCourses] = useState([]);
     const [existingLessons, setExistingLessons] = useState([]);
+    const [existingExams, setExistingExams] = useState([]);
+
+    // Certificate applications & file uploads
+    const [certApplications, setCertApplications] = useState([]);
+    const [certImageFile, setCertImageFile] = useState(null);
+    const [certPdfFile, setCertPdfFile] = useState(null);
 
     // Student detail modal
     const [studentDetail, setStudentDetail] = useState(null);
@@ -180,7 +186,17 @@ export default function AdminPage() {
                 case 'students': setData((await adminAPI.getStudents()).data); break;
                 case 'payments': setData((await adminAPI.getPayments()).data); break;
                 case 'homework': setData((await adminAPI.getHomeworkSubmissions()).data); break;
-                case 'certificates': setData((await adminAPI.getCertificates()).data); break;
+                case 'certificates': {
+                    const [certsRes, appsRes, examsRes] = await Promise.allSettled([
+                        adminAPI.getCertificates(),
+                        adminAPI.getCertificateApplications(),
+                        adminAPI.getExams(),
+                    ]);
+                    if (certsRes.status === 'fulfilled') setData(certsRes.value.data);
+                    if (appsRes.status === 'fulfilled') setCertApplications(appsRes.value.data || []);
+                    if (examsRes.status === 'fulfilled') setExistingExams(examsRes.value.data || []);
+                    break;
+                }
                 case 'content': await loadContentData(); break;
                 case 'chat': await loadConversations(); break;
             }
@@ -190,11 +206,19 @@ export default function AdminPage() {
 
     const loadContentData = async () => {
         try {
-            const mRes = await coursesAPI.getModules();
-            setExistingModules(mRes.data);
-            const allCourses = [];
-            mRes.data.forEach(m => { if (m.courses) allCourses.push(...m.courses.map(c => ({ ...c, module_name: m.name }))); });
-            setExistingCourses(allCourses);
+            const [mRes, exRes] = await Promise.allSettled([
+                coursesAPI.getModules(),
+                adminAPI.getExams(),
+            ]);
+            if (mRes.status === 'fulfilled') {
+                setExistingModules(mRes.value.data);
+                const allCourses = [];
+                mRes.value.data.forEach(m => { if (m.courses) allCourses.push(...m.courses.map(c => ({ ...c, module_name: m.name }))); });
+                setExistingCourses(allCourses);
+            }
+            if (exRes.status === 'fulfilled') {
+                setExistingExams(exRes.value.data || []);
+            }
         } catch { }
     };
 
@@ -260,16 +284,32 @@ export default function AdminPage() {
     };
 
     // Open modal
-    const openModal = (type) => {
+    const openModal = (type, preset = {}) => {
         setModalType(type);
-        setFormData({});
-        // Always start with exactly 10 questions for tests
+        setFormData(preset || {});
+        setCertImageFile(null);
+        setCertPdfFile(null);
+        // Always start with 10 questions for lesson tests, or 30 questions for certificate exam
         if (type === 'test') {
             const qs = [];
             for (let i = 0; i < 10; i++) {
                 qs.push({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_option: 'a', order: i + 1 });
             }
             setTestQuestions(qs);
+        } else if (type === 'certExam') {
+            const count = preset.total_questions || 30;
+            const qs = [];
+            for (let i = 0; i < count; i++) {
+                qs.push({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_option: 'a', order: i + 1 });
+            }
+            setTestQuestions(qs);
+            setFormData({
+                title: preset.title || 'Sertifikat imtihoni',
+                passing_score: preset.passing_score || 25,
+                time_limit: preset.time_limit || 1800,
+                course_id: preset.course_id || selCourse || '',
+                ...preset,
+            });
         } else {
             setTestQuestions([]);
         }
@@ -361,7 +401,53 @@ export default function AdminPage() {
                     task_data: formData.task_data
                 }); closeModal(); break;
                 case 'deleteGame': if (confirm("O'yinni o'chirasizmi?")) await adminAPI.deleteGame(args[0]); break;
-                case 'sendCert': await adminAPI.sendCertificate(formData.user_id, formData.cert_title, formData.file_url, formData.cert_desc); closeModal(); break;
+                case 'createCertExam': {
+                    const targetCourseId = parseInt(formData.course_id || selCourse);
+                    if (!targetCourseId) {
+                        showMsg('Avval kursni tanlang!', true);
+                        setSubmitting(false);
+                        return;
+                    }
+                    const validQs = testQuestions.filter(q => q.question.trim() && q.option_a.trim() && q.option_b.trim() && q.option_c.trim() && q.option_d.trim());
+                    if (validQs.length === 0) {
+                        showMsg('Kamida 1 ta savolni barcha variantlari bilan to\'ldiring!', true);
+                        setSubmitting(false);
+                        return;
+                    }
+                    await adminAPI.createExam({
+                        course_id: targetCourseId,
+                        title: formData.title || 'Sertifikat imtihoni',
+                        after_lesson_order: 0,
+                        time_limit: parseInt(formData.time_limit) || 1800,
+                        passing_score: parseInt(formData.passing_score) || Math.min(25, validQs.length),
+                        questions: validQs,
+                    });
+                    closeModal();
+                    break;
+                }
+                case 'deleteCertExam': {
+                    if (confirm("Sertifikat imtihonini o'chirasizmi?")) {
+                        await adminAPI.deleteExam(args[0]);
+                    }
+                    break;
+                }
+                case 'sendCert': {
+                    const fd = new FormData();
+                    if (formData.user_id) fd.append('user_id', formData.user_id);
+                    if (formData.application_id) fd.append('application_id', formData.application_id);
+                    if (formData.course_id) fd.append('course_id', formData.course_id);
+                    if (formData.cert_title) fd.append('title', formData.cert_title);
+                    if (formData.cert_desc) fd.append('description', formData.cert_desc);
+                    if (formData.file_url) fd.append('file_url', formData.file_url);
+                    if (formData.pdf_url) fd.append('pdf_url', formData.pdf_url);
+                    if (certImageFile) fd.append('image_file', certImageFile);
+                    if (certPdfFile) fd.append('pdf_file', certPdfFile);
+                    await adminAPI.sendCertificate(fd);
+                    setCertImageFile(null);
+                    setCertPdfFile(null);
+                    closeModal();
+                    break;
+                }
                 case 'deleteCert': await adminAPI.deleteCertificate(args[0]); break;
             }
             showMsg('Muvaffaqiyatli!');
@@ -390,6 +476,7 @@ export default function AdminPage() {
         { id: 'lessons', icon: <PlayCircle size={14} />, label: 'Darslar' },
         { id: 'tests', icon: <FileText size={14} />, label: 'Testlar' },
         { id: 'homeworkTab', icon: <BookOpen size={14} />, label: 'Vazifalar' },
+        { id: 'certExamsTab', icon: <Award size={14} />, label: 'Sertifikat Testi (30 ta)' },
     ];
 
     // Cascading Selects — inline JSX (agar component qilsak, har safar qaytadan yaratiladi)
@@ -847,23 +934,128 @@ export default function AdminPage() {
 
                         {/* ============ CERTIFICATES ============ */}
                         {tab === 'certificates' && (
-                            <div className="cert-section">
-                                <button className="btn btn-primary" onClick={() => openModal('cert')}><Plus size={16} /> Sertifikat yuborish</button>
-                                <div className="table-wrap" style={{ marginTop: '1rem' }}>
-                                    <table className="admin-table">
-                                        <thead><tr><th>O'quvchi</th><th>Sertifikat</th><th>Fayl</th><th>Sana</th><th>Amal</th></tr></thead>
-                                        <tbody>
-                                            {Array.isArray(data) && data.map(c => (
-                                                <tr key={c.id}>
-                                                    <td><strong>{c.user_name}</strong></td>
-                                                    <td>{c.title}</td>
-                                                    <td><a href={c.file_url} target="_blank" className="btn btn-sm btn-secondary"><Eye size={14} /></a></td>
-                                                    <td className="td-sm">{c.issued_at?.slice(0, 10)}</td>
-                                                    <td><button className="btn btn-sm btn-danger" onClick={() => handleAction('deleteCert', c.id)}><Trash2 size={14} /></button></td>
+                            <div className="cert-section animate-fade">
+                                {/* Top Actions */}
+                                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                                    <button className="btn btn-primary" onClick={() => openModal('cert')}>
+                                        <Plus size={16} /> Sertifikat yuborish (Ixtiyoriy o'quvchiga)
+                                    </button>
+                                    <button className="btn btn-secondary" onClick={() => openModal('certExam')}>
+                                        <FileText size={16} /> 🎓 Sertifikat testi (30 ta savol) qo'shish
+                                    </button>
+                                </div>
+
+                                {/* 1. STUDENTS WHO APPLIED / PASSED THE CERTIFICATE EXAM */}
+                                <div className="card" style={{ marginBottom: '1.5rem', padding: '1.25rem' }}>
+                                    <h3 style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        🏆 Sertifikatga topshirgan o'quvchilar
+                                        <span className="badge badge-warning">{certApplications.filter(a => a.status === 'pending').length} ta kutilmoqda</span>
+                                    </h3>
+                                    <div className="table-wrap">
+                                        <table className="admin-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>O'quvchi</th>
+                                                    <th>Kurs</th>
+                                                    <th>Test natijasi</th>
+                                                    <th>Holati</th>
+                                                    <th>Sana</th>
+                                                    <th>Sertifikat topshirish (+)</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {certApplications.map(app => (
+                                                    <tr key={app.id}>
+                                                        <td>
+                                                            <strong>{app.user_name}</strong><br />
+                                                            <small style={{ color: 'var(--text-muted)' }}>{app.user_phone}</small>
+                                                        </td>
+                                                        <td><strong>{app.course_name}</strong></td>
+                                                        <td>
+                                                            {app.total > 0 ? (
+                                                                <span className="badge badge-success">{app.score} / {app.total} (min: {app.min_required})</span>
+                                                            ) : (
+                                                                <span className="badge badge-info">Darslar tugallangan</span>
+                                                            )}
+                                                        </td>
+                                                        <td>
+                                                            {app.status === 'issued' ? (
+                                                                <span className="badge badge-success">✅ Topshirilgan</span>
+                                                            ) : (
+                                                                <span className="badge badge-warning">⏳ Sertifikat kutilmoqda</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="td-sm">{app.submitted_at?.slice(0, 16).replace('T', ' ')}</td>
+                                                        <td>
+                                                            <div className="action-btns">
+                                                                <button
+                                                                    className="btn btn-sm btn-primary"
+                                                                    onClick={() => openModal('cert', {
+                                                                        user_id: app.user_id,
+                                                                        user_name: app.user_name,
+                                                                        application_id: app.id,
+                                                                        course_id: app.course_id,
+                                                                        cert_title: `${app.course_name} — Sertifikat`,
+                                                                        cert_desc: `Muvaffaqiyatli yakunlagani uchun (${app.user_name})`,
+                                                                    })}
+                                                                    title="Sertifikat (Rasm va PDF) yuklash va Bot orqali yuborish"
+                                                                >
+                                                                    <Plus size={14} /> {app.status === 'issued' ? 'Qayta yuborish' : 'Sertifikat topshirish'}
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {certApplications.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '1.5rem' }}>
+                                                            Hozircha sertifikatga topshirgan o'quvchilar yo'q
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {/* 2. ALREADY ISSUED CERTIFICATES */}
+                                <div className="card" style={{ padding: '1.25rem' }}>
+                                    <h3 style={{ marginBottom: '0.75rem' }}>📜 Topshirilgan sertifikatlar ({Array.isArray(data) ? data.length : 0})</h3>
+                                    <div className="table-wrap">
+                                        <table className="admin-table">
+                                            <thead><tr><th>O'quvchi</th><th>Sertifikat</th><th>Rasm / PDF</th><th>Sana</th><th>Amal</th></tr></thead>
+                                            <tbody>
+                                                {Array.isArray(data) && data.map(c => (
+                                                    <tr key={c.id}>
+                                                        <td>
+                                                            <strong>{c.user_name}</strong><br />
+                                                            <small style={{ color: 'var(--text-muted)' }}>{c.user_phone}</small>
+                                                        </td>
+                                                        <td>{c.title}</td>
+                                                        <td>
+                                                            <div className="action-btns">
+                                                                {c.file_url && (
+                                                                    <a href={c.file_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
+                                                                        <Eye size={14} /> Rasm
+                                                                    </a>
+                                                                )}
+                                                                {c.pdf_url && (
+                                                                    <a href={c.pdf_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-info">
+                                                                        <FileText size={14} /> PDF
+                                                                    </a>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="td-sm">{c.issued_at?.slice(0, 10)}</td>
+                                                        <td><button className="btn btn-sm btn-danger" onClick={() => handleAction('deleteCert', c.id)}><Trash2 size={14} /></button></td>
+                                                    </tr>
+                                                ))}
+                                                {Array.isArray(data) && data.length === 0 && (
+                                                    <tr><td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Hali sertifikat yuborilmagan</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -1095,6 +1287,42 @@ export default function AdminPage() {
                                         })()}
                                     </div>
                                 )}
+                                {/* ---- CERTIFICATE EXAMS (30 QUESTIONS, MIN 25) ---- */}
+                                {contentTab === 'certExamsTab' && (
+                                    <div className="content-section animate-fade">
+                                        <div className="section-header">
+                                            <h3><Award size={16} /> Kurs Sertifikat Imtihonlari (masalan: 30 tadan 25 ta)</h3>
+                                            <button className="btn btn-primary btn-sm" onClick={() => openModal('certExam')}>
+                                                <Plus size={14} /> Sertifikat testi qo'shish
+                                            </button>
+                                        </div>
+                                        <p className="form-hint">
+                                            O'quvchi kursning barcha darslarini tugatganda unga <strong>"Sertifikatga topshirish"</strong> tugmasi chiqadi va shu yerdagi savollarni yechadi.
+                                        </p>
+                                        {existingExams.length === 0 ? (
+                                            <p className="empty-text">Hozircha sertifikat imtihoni qo'shilmagan. Yuqoridagi "+ Sertifikat testi qo'shish" tugmasini bosing.</p>
+                                        ) : (
+                                            existingExams.map(ex => (
+                                                <div key={ex.id} className="list-item card">
+                                                    <div className="list-item-content">
+                                                        <div className="list-item-info">
+                                                            <strong>{ex.title}</strong>
+                                                            <span className="badge badge-accent">{ex.course_name || `Kurs #${ex.course_id}`}</span>
+                                                            <span className="badge badge-info">{ex.questions_count} ta savol</span>
+                                                            <span className="badge badge-success">Min o'tish: {ex.passing_score} ta</span>
+                                                            <span className="badge badge-warning">{Math.floor((ex.time_limit || 1800) / 60)} daqiqa</span>
+                                                        </div>
+                                                        <div className="action-btns">
+                                                            <button className="btn btn-sm btn-danger" onClick={() => handleAction('deleteCertExam', ex.id)}>
+                                                                <Trash2 size={14} /> O'chirish
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </>
@@ -1258,23 +1486,160 @@ export default function AdminPage() {
                 </div>
             </Modal>
 
-            {/* Certificate Modal */}
-            <Modal open={modalOpen && modalType === 'cert'} title="Sertifikat yuborish" onClose={closeModal}>
+            {/* Certificate Exam Modal (e.g. 30 questions, min 25 to pass) */}
+            <Modal open={modalOpen && modalType === 'certExam'} title="🎓 Sertifikat Imtihoni (Masalan: 30 tadan 25 ta)" onClose={closeModal}>
                 <div className="modal-form">
                     <div className="form-group">
-                        <label>O'quvchi tanlang</label>
-                        <select className="input" value={formData.user_id || ''} onChange={e => setFormData(p => ({ ...p, user_id: parseInt(e.target.value) }))}>
-                            <option value="">Tanlang...</option>
-                            {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.phone})</option>)}
+                        <label>Qaysi kurs uchun?</label>
+                        <select
+                            className="input"
+                            value={formData.course_id || ''}
+                            onChange={e => setFormData(p => ({ ...p, course_id: e.target.value }))}
+                        >
+                            <option value="">📚 Kursni tanlang...</option>
+                            {existingCourses.map(c => (
+                                <option key={c.id} value={c.id}>{c.name} ({c.module_name})</option>
+                            ))}
                         </select>
                     </div>
-                    <div className="form-group"><label>Sertifikat nomi</label><input className="input" value={formData.cert_title || ''} onChange={e => setFormData(p => ({ ...p, cert_title: e.target.value }))} /></div>
-                    <div className="form-group"><label>Fayl URL (PNG/PDF)</label><input className="input" value={formData.file_url || ''} onChange={e => setFormData(p => ({ ...p, file_url: e.target.value }))} /></div>
-                    <div className="form-group"><label>Izoh</label><input className="input" value={formData.cert_desc || ''} onChange={e => setFormData(p => ({ ...p, cert_desc: e.target.value }))} /></div>
+
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Imtihon nomi</label>
+                            <input
+                                className="input"
+                                placeholder="Sertifikat imtihoni"
+                                value={formData.title || ''}
+                                onChange={e => setFormData(p => ({ ...p, title: e.target.value }))}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Kamida nechta topishi shart? (masalan: 25)</label>
+                            <input
+                                className="input"
+                                type="number"
+                                placeholder="25"
+                                value={formData.passing_score ?? 25}
+                                onChange={e => setFormData(p => ({ ...p, passing_score: e.target.value }))}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Vaqt (soniya, 1800 = 30 daqiqa)</label>
+                            <input
+                                className="input"
+                                type="number"
+                                placeholder="1800"
+                                value={formData.time_limit ?? 1800}
+                                onChange={e => setFormData(p => ({ ...p, time_limit: e.target.value }))}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="questions-section">
+                        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <h4>📝 Savollar ({testQuestions.filter(q => q.question.trim()).length} / {testQuestions.length} to'ldirildi)</h4>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button type="button" className="btn btn-sm btn-secondary" onClick={addQuestion}>
+                                    <Plus size={14} /> Savol qo'shish
+                                </button>
+                            </div>
+                        </div>
+
+                        {testQuestions.map((q, i) => (
+                            <div key={i} className="question-card card">
+                                <div className="question-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span className="q-number">{i + 1}-savol</span>
+                                    {testQuestions.length > 1 && (
+                                        <button type="button" className="btn btn-sm btn-danger" onClick={() => removeQuestion(i)}>
+                                            <Trash2 size={12} />
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="form-group">
+                                    <label>Savol matni</label>
+                                    <textarea className="input" rows={2} value={q.question} onChange={e => updateQuestion(i, 'question', e.target.value)} placeholder={`${i + 1}-savol matni...`} />
+                                </div>
+                                <div className="form-row four-cols">
+                                    <div className="form-group"><label>A</label><input className="input" value={q.option_a} onChange={e => updateQuestion(i, 'option_a', e.target.value)} /></div>
+                                    <div className="form-group"><label>B</label><input className="input" value={q.option_b} onChange={e => updateQuestion(i, 'option_b', e.target.value)} /></div>
+                                    <div className="form-group"><label>C</label><input className="input" value={q.option_c} onChange={e => updateQuestion(i, 'option_c', e.target.value)} /></div>
+                                    <div className="form-group"><label>D</label><input className="input" value={q.option_d} onChange={e => updateQuestion(i, 'option_d', e.target.value)} /></div>
+                                </div>
+                                <div className="form-group" style={{ maxWidth: '150px' }}>
+                                    <label>To'g'ri javob</label>
+                                    <select className="input" value={q.correct_option} onChange={e => updateQuestion(i, 'correct_option', e.target.value)}>
+                                        <option value="a">A</option>
+                                        <option value="b">B</option>
+                                        <option value="c">C</option>
+                                        <option value="d">D</option>
+                                    </select>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="modal-actions">
+                        <button className="btn btn-secondary" onClick={closeModal}>Bekor</button>
+                        <button className="btn btn-primary" onClick={() => handleAction('createCertExam')} disabled={submitting}>
+                            {submitting ? <Loader size={16} className="spin" /> : <><Check size={16} /> Saqlash</>}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Certificate Modal (Upload Image + PDF and send via Telegram bot) */}
+            <Modal open={modalOpen && modalType === 'cert'} title={formData.user_name ? `🏆 ${formData.user_name} ga Sertifikat topshirish` : "🏆 Sertifikat yuborish"} onClose={closeModal}>
+                <div className="modal-form">
+                    {!formData.application_id && (
+                        <div className="form-group">
+                            <label>O'quvchi tanlang</label>
+                            <select className="input" value={formData.user_id || ''} onChange={e => setFormData(p => ({ ...p, user_id: parseInt(e.target.value) }))}>
+                                <option value="">Tanlang...</option>
+                                {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.phone})</option>)}
+                            </select>
+                        </div>
+                    )}
+                    {formData.user_name && (
+                        <div className="card" style={{ padding: '0.75rem 1rem', marginBottom: '0.75rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)' }}>
+                            <strong>👤 O'quvchi:</strong> {formData.user_name}
+                        </div>
+                    )}
+                    <div className="form-group">
+                        <label>Sertifikat nomi</label>
+                        <input className="input" placeholder="Masalan: Kompyuter savodxonligi — Sertifikat" value={formData.cert_title || ''} onChange={e => setFormData(p => ({ ...p, cert_title: e.target.value }))} />
+                    </div>
+                    <div className="form-group">
+                        <label>🖼 Sertifikat Rasmi (PNG / JPG yuklash)</label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            className="input"
+                            onChange={e => setCertImageFile(e.target.files?.[0] || null)}
+                        />
+                        {certImageFile && <small style={{ color: 'var(--success)' }}>✅ Tanlandi: {certImageFile.name}</small>}
+                    </div>
+                    <div className="form-group">
+                        <label>📄 Sertifikat PDF fayli (PDF yuklash)</label>
+                        <input
+                            type="file"
+                            accept=".pdf,application/pdf"
+                            className="input"
+                            onChange={e => setCertPdfFile(e.target.files?.[0] || null)}
+                        />
+                        {certPdfFile && <small style={{ color: 'var(--success)' }}>✅ Tanlandi: {certPdfFile.name}</small>}
+                    </div>
+                    <div className="form-group">
+                        <label>Yoki tayyor havola (URL — ixtiyoriy)</label>
+                        <input className="input" placeholder="https://..." value={formData.file_url || ''} onChange={e => setFormData(p => ({ ...p, file_url: e.target.value }))} />
+                    </div>
+                    <div className="form-group">
+                        <label>Tabrik izohi (Botda ham boradi)</label>
+                        <input className="input" placeholder="Kursni a'lo baholarga bitirganingiz bilan tabriklaymiz!" value={formData.cert_desc || ''} onChange={e => setFormData(p => ({ ...p, cert_desc: e.target.value }))} />
+                    </div>
                     <div className="modal-actions">
                         <button className="btn btn-secondary" onClick={closeModal}>Bekor</button>
                         <button className="btn btn-primary" onClick={() => handleAction('sendCert')} disabled={submitting}>
-                            {submitting ? <Loader size={16} className="spin" /> : <><Send size={16} /> Yuborish</>}
+                            {submitting ? <Loader size={16} className="spin" /> : <><Send size={16} /> Sertifikatni topshirish va Botga yuborish</>}
                         </button>
                     </div>
                 </div>
