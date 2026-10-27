@@ -7,7 +7,7 @@ import {
     Plus, Trash2, Check, X, Eye, EyeOff, Loader, Send, Edit3, ChevronDown, ChevronRight, ChevronUp,
     Layers, FolderOpen, PlayCircle, Save, RefreshCw, AlertCircle, Search,
     MessageCircle, ArrowLeft, ExternalLink, TrendingUp, BarChart3, DollarSign,
-    Clock, CheckCircle, XCircle, Activity
+    Clock, CheckCircle, XCircle, Activity, Database
 } from 'lucide-react';
 import { chatAPI } from '../api/client';
 import './AdminPage.css';
@@ -114,6 +114,19 @@ export default function AdminPage() {
     const [certApplications, setCertApplications] = useState([]);
     const [certImageFile, setCertImageFile] = useState(null);
     const [certPdfFile, setCertPdfFile] = useState(null);
+
+    // Site settings (Footer, contact phone, teacher name, bot, card info)
+    const [siteSettings, setSiteSettings] = useState({
+        platform_title: 'MDev Platform',
+        footer_desc: "Online ta'lim platformasi — Professional IT ko'nikmalar",
+        contact_phone: '+998 88 981 02 06',
+        teacher_name: 'Muhammaddiyor Orifjonov',
+        bot_username: '@mdevsayt_bot',
+        copyright_text: '© 2024 MDev Platform. Barcha huquqlar himoyalangan.',
+        card_number: '5614 6819 0511 2722',
+        card_holder: 'Orifjonov Muhammaddiyor',
+        card_expiry: '07/30',
+    });
 
     // Student detail modal
     const [studentDetail, setStudentDetail] = useState(null);
@@ -228,6 +241,11 @@ export default function AdminPage() {
                 }
                 case 'content': await loadContentData(); break;
                 case 'chat': await loadConversations(); break;
+                case 'settings': {
+                    const sRes = await adminAPI.getSiteSettings();
+                    if (sRes.data) setSiteSettings(prev => ({ ...prev, ...sRes.data }));
+                    break;
+                }
             }
         } catch (err) { console.error(err); }
         setLoading(false);
@@ -478,6 +496,14 @@ export default function AdminPage() {
                     break;
                 }
                 case 'deleteCert': await adminAPI.deleteCertificate(args[0]); break;
+                case 'saveSiteSettings': {
+                    const res = await adminAPI.updateSiteSettings(siteSettings);
+                    if (res.data?.settings) {
+                        setSiteSettings(prev => ({ ...prev, ...res.data.settings }));
+                        window.dispatchEvent(new CustomEvent('siteSettingsUpdated', { detail: res.data.settings }));
+                    }
+                    break;
+                }
             }
             showMsg('Muvaffaqiyatli!');
             setFormData({});
@@ -497,6 +523,7 @@ export default function AdminPage() {
         { id: 'homework', icon: <FileText size={16} />, label: 'Vazifalar' },
         { id: 'certificates', icon: <Award size={16} />, label: 'Sertifikatlar' },
         { id: 'chat', icon: <MessageCircle size={16} />, label: 'Chat' },
+        { id: 'settings', icon: <Edit3 size={16} />, label: "Sayt ma'lumotlari" },
     ];
 
     const contentTabs = [
@@ -649,6 +676,44 @@ export default function AdminPage() {
                                         </div>
                                         <div className="hero-stat-toggle">
                                             {showPayments ? <Eye size={14} /> : <EyeOff size={14} />}
+                                        </div>
+                                        <div className="hero-stat-decoration"></div>
+                                    </div>
+
+                                    {/* Ma'lumotlar bazasi bandligi (Neon DB) */}
+                                    <div className="hero-stat-card hero-stat-accent" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                                        <div className="hero-stat-icon" style={{ color: '#06b6d4', background: 'rgba(6, 182, 212, 0.12)' }}>
+                                            <Database size={22} />
+                                        </div>
+                                        <div className="hero-stat-content" style={{ width: '100%' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                                                <span className="hero-stat-value" style={{ color: '#06b6d4', fontSize: '1.25rem' }}>
+                                                    {data.db_size_pretty || '16 MB'}
+                                                </span>
+                                                <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600 }}>
+                                                    {data.db_used_percent ?? 3.1}% to'lgan
+                                                </small>
+                                            </div>
+                                            <span className="hero-stat-label">Ma'lumotlar bazasi (Neon DB)</span>
+                                            <div style={{
+                                                height: '6px',
+                                                background: 'var(--bg-input)',
+                                                borderRadius: '3px',
+                                                overflow: 'hidden',
+                                                marginTop: '0.4rem',
+                                                width: '100%'
+                                            }}>
+                                                <div style={{
+                                                    height: '100%',
+                                                    width: `${Math.max(data.db_used_percent ?? 3.1, 2)}%`,
+                                                    background: (data.db_used_percent > 85) ? 'var(--danger)' : 'linear-gradient(90deg, #06b6d4, #3b82f6)',
+                                                    borderRadius: '3px',
+                                                    transition: 'width 0.6s ease'
+                                                }}></div>
+                                            </div>
+                                            <small style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: '0.25rem', display: 'block' }}>
+                                                Chegara: {data.db_max_limit_mb || 512} MB dan {data.db_size_mb || 16} MB band
+                                            </small>
                                         </div>
                                         <div className="hero-stat-decoration"></div>
                                     </div>
@@ -1386,6 +1451,132 @@ export default function AdminPage() {
                                         )}
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {/* ============ SITE SETTINGS TAB ============ */}
+                        {tab === 'settings' && (
+                            <div className="card animate-fade" style={{ maxWidth: '800px', margin: '0 auto', padding: '1.75rem' }}>
+                                <div className="section-header" style={{ marginBottom: '1.25rem' }}>
+                                    <h3><Edit3 size={18} /> Sayt va Aloqa Ma'lumotlarini Sozlash</h3>
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        onClick={() => handleAction('saveSiteSettings')}
+                                        disabled={submitting}
+                                    >
+                                        {submitting ? <Loader size={16} className="spin" /> : <><Save size={16} /> Saqlash</>}
+                                    </button>
+                                </div>
+                                <p className="form-hint" style={{ marginBottom: '1.5rem' }}>
+                                    Bu yerdagi o'zgarishlar saytning eng pastki qismida (Footer), Qoidalar va To'lov sahifalarida real vaqtda yangilanadi.
+                                </p>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label><strong>📞 Telefon raqam (Aloqa va Footer):</strong></label>
+                                        <input
+                                            className="input"
+                                            value={siteSettings.contact_phone || ''}
+                                            onChange={e => setSiteSettings(p => ({ ...p, contact_phone: e.target.value }))}
+                                            placeholder="+998 88 981 02 06"
+                                        />
+                                    </div>
+
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label><strong>👨‍🏫 O'qituvchi / Muallif ismi:</strong></label>
+                                        <input
+                                            className="input"
+                                            value={siteSettings.teacher_name || ''}
+                                            onChange={e => setSiteSettings(p => ({ ...p, teacher_name: e.target.value }))}
+                                            placeholder="Muhammaddiyor Orifjonov"
+                                        />
+                                    </div>
+
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label><strong>🤖 Telegram Bot nomi:</strong></label>
+                                        <input
+                                            className="input"
+                                            value={siteSettings.bot_username || ''}
+                                            onChange={e => setSiteSettings(p => ({ ...p, bot_username: e.target.value }))}
+                                            placeholder="@mdevsayt_bot"
+                                        />
+                                    </div>
+
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label><strong>🏷 Platforma nomi:</strong></label>
+                                        <input
+                                            className="input"
+                                            value={siteSettings.platform_title || ''}
+                                            onChange={e => setSiteSettings(p => ({ ...p, platform_title: e.target.value }))}
+                                            placeholder="MDev Platform"
+                                        />
+                                    </div>
+
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label><strong>📝 Pastki qisqa tavsif (Footer tavsifi):</strong></label>
+                                        <textarea
+                                            className="input"
+                                            rows={2}
+                                            value={siteSettings.footer_desc || ''}
+                                            onChange={e => setSiteSettings(p => ({ ...p, footer_desc: e.target.value }))}
+                                        />
+                                    </div>
+
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label><strong>© Mualliflik huquqi (Copyright):</strong></label>
+                                        <input
+                                            className="input"
+                                            value={siteSettings.copyright_text || ''}
+                                            onChange={e => setSiteSettings(p => ({ ...p, copyright_text: e.target.value }))}
+                                        />
+                                    </div>
+
+                                    <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '0.5rem 0' }} />
+                                    <h4>💳 To'lov karta ma'lumotlari (Talabalarga ko'rinadi)</h4>
+
+                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                        <label>Karta raqami</label>
+                                        <input
+                                            className="input"
+                                            value={siteSettings.card_number || ''}
+                                            onChange={e => setSiteSettings(p => ({ ...p, card_number: e.target.value }))}
+                                            placeholder="5614 6819 0511 2722"
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem' }}>
+                                        <div className="form-group" style={{ marginBottom: 0 }}>
+                                            <label>Karta egasi (F.I.SH)</label>
+                                            <input
+                                                className="input"
+                                                value={siteSettings.card_holder || ''}
+                                                onChange={e => setSiteSettings(p => ({ ...p, card_holder: e.target.value }))}
+                                                placeholder="Orifjonov Muhammaddiyor"
+                                            />
+                                        </div>
+                                        <div className="form-group" style={{ marginBottom: 0 }}>
+                                            <label>Muddati</label>
+                                            <input
+                                                className="input"
+                                                value={siteSettings.card_expiry || ''}
+                                                onChange={e => setSiteSettings(p => ({ ...p, card_expiry: e.target.value }))}
+                                                placeholder="07/30"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary btn-lg"
+                                            onClick={() => handleAction('saveSiteSettings')}
+                                            disabled={submitting}
+                                        >
+                                            {submitting ? <Loader size={18} className="spin" /> : <><Save size={18} /> Saqlash</>}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </>

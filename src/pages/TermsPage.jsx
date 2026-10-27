@@ -1,10 +1,23 @@
+import { useState, useEffect } from 'react';
 import { BookOpen, Shield, Clock, CheckCircle, AlertCircle, CreditCard, Star, Award, FileText, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
+import { adminAPI } from '../api/client';
 import './TermsPage.css';
 
 export default function TermsPage() {
     const { t } = useLang();
+    const [siteInfo, setSiteInfo] = useState({
+        teacher_name: 'Muhammaddiyor Orifjonov',
+        contact_phone: '+998 88 981 02 06',
+        bot_username: '@mdevsayt_bot',
+    });
+
+    useEffect(() => {
+        adminAPI.getSiteSettings()
+            .then(r => { if (r.data) setSiteInfo(prev => ({ ...prev, ...r.data })); })
+            .catch(() => { });
+    }, []);
 
     return (
         <div className="terms-page animate-fade">
@@ -109,9 +122,10 @@ export default function TermsPage() {
                     </div>
                     <h3>{t('contact')}</h3>
                     <ul>
-                        <li><strong>Muhammaddiyor Orifjonov</strong></li>
+                        <li><strong>{siteInfo.teacher_name}</strong></li>
                         <li>Full-stack developer</li>
-                        <li>📞 +998889810206</li>
+                        <li>📞 {siteInfo.contact_phone}</li>
+                        <li>🤖 {siteInfo.bot_username}</li>
                     </ul>
                 </div>
             </div>

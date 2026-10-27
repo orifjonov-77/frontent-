@@ -220,6 +220,8 @@ export const adminAPI = {
   deleteCertificate: (id) => api.delete(`/admin/certificates/${id}`),
   updateTest: (id, data) => api.put(`/admin/tests/${id}`, data),
   deleteTestByLesson: (lessonId) => api.delete(`/admin/tests/by-lesson/${lessonId}`),
+  getSiteSettings: () => api.get('/admin/site-settings', { params: { _t: Date.now() } }),
+  updateSiteSettings: (data) => api.put('/admin/site-settings', data),
 };
 
 // Chat (no cache — must always show fresh messages)

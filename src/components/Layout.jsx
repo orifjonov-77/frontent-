@@ -3,9 +3,10 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLang } from '../context/LangContext';
+import { adminAPI } from '../api/client';
 import {
     Home, BookOpen, Trophy, User, Shield,
-    Sun, Moon, Menu, X, LogOut, LogIn, FileText, Globe, Award, Download, Smartphone, Monitor, CheckCircle
+    Sun, Moon, Menu, X, LogOut, LogIn, FileText, Globe, Award, Download, Smartphone, Monitor, CheckCircle, Edit3, Save, Loader
 } from 'lucide-react';
 import myLogo from '../assets/mylogo.png';
 import AnimatedBackground from './AnimatedBackground';
@@ -20,6 +21,56 @@ export default function Layout() {
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [isInstalled, setIsInstalled] = useState(false);
     const [installGuideOpen, setInstallGuideOpen] = useState(false);
+    const [siteSettings, setSiteSettings] = useState({
+        platform_title: 'MDev Platform',
+        footer_desc: "Online ta'lim platformasi — Professional IT ko'nikmalar",
+        contact_phone: '+998 88 981 02 06',
+        teacher_name: 'Muhammaddiyor Orifjonov',
+        bot_username: '@mdevsayt_bot',
+        copyright_text: '© 2024 MDev Platform. Barcha huquqlar himoyalangan.',
+        card_number: '5614 6819 0511 2722',
+        card_holder: 'Orifjonov Muhammaddiyor',
+        card_expiry: '07/30',
+    });
+    const [footerEditOpen, setFooterEditOpen] = useState(false);
+    const [footerForm, setFooterForm] = useState({});
+    const [savingFooter, setSavingFooter] = useState(false);
+
+    const loadSiteSettings = () => {
+        adminAPI.getSiteSettings()
+            .then(r => {
+                if (r.data) setSiteSettings(prev => ({ ...prev, ...r.data }));
+            })
+            .catch(() => { });
+    };
+
+    useEffect(() => {
+        loadSiteSettings();
+        const handler = (e) => {
+            if (e.detail) {
+                setSiteSettings(prev => ({ ...prev, ...e.detail }));
+            } else {
+                loadSiteSettings();
+            }
+        };
+        window.addEventListener('siteSettingsUpdated', handler);
+        return () => window.removeEventListener('siteSettingsUpdated', handler);
+    }, []);
+
+    const handleSaveFooterSettings = async () => {
+        setSavingFooter(true);
+        try {
+            const res = await adminAPI.updateSiteSettings(footerForm);
+            if (res.data?.settings) {
+                setSiteSettings(prev => ({ ...prev, ...res.data.settings }));
+                window.dispatchEvent(new CustomEvent('siteSettingsUpdated', { detail: res.data.settings }));
+            }
+            setFooterEditOpen(false);
+        } catch (err) {
+            alert(err.response?.data?.detail || "Saqlashda xatolik yuz berdi");
+        }
+        setSavingFooter(false);
+    };
 
     // PWA Install prompt listener
     useEffect(() => {
@@ -298,9 +349,9 @@ export default function Layout() {
                         <div className="footer-brand">
                             <div className="footer-logo-row">
                                 <img src={myLogo} alt="MDev Logo" className="footer-logo-img" />
-                                <h3>{t('platformTitle')}</h3>
+                                <h3>{siteSettings.platform_title || t('platformTitle')}</h3>
                             </div>
-                            <p>{t('footerDesc')}</p>
+                            <p>{siteSettings.footer_desc || t('footerDesc')}</p>
                         </div>
                         <div className="footer-links">
                             <Link to="/modules">{t('modules')}</Link>
@@ -309,16 +360,138 @@ export default function Layout() {
                             {user && <Link to="/results">{t('myResults')}</Link>}
                         </div>
                         <div className="footer-contact">
-                            <p>📞 +998 88 981 02 06</p>
-                            <p>👨‍🏫 Muhammaddiyor Orifjonov</p>
-                            <p>🤖 @mdevsayt_bot</p>
+                            <p>📞 {siteSettings.contact_phone}</p>
+                            <p>👨‍🏫 {siteSettings.teacher_name}</p>
+                            <p>🤖 {siteSettings.bot_username}</p>
+                            {isAdmin && (
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-secondary"
+                                    style={{ marginTop: '0.5rem' }}
+                                    onClick={() => {
+                                        setFooterForm({ ...siteSettings });
+                                        setFooterEditOpen(true);
+                                    }}
+                                >
+                                    <Edit3 size={13} /> Ma'lumotlarni o'zgartirish
+                                </button>
+                            )}
                         </div>
                     </div>
                     <div className="footer-bottom">
-                        <p>{t('allRights')}</p>
+                        <p>{siteSettings.copyright_text || t('allRights')}</p>
                     </div>
                 </div>
             </footer>
+
+            {/* Admin Quick Edit Footer / Contact Modal */}
+            {footerEditOpen && isAdmin && (
+                <div className="modal-overlay" onClick={() => setFooterEditOpen(false)}>
+                    <div className="modal-content install-modal-box" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            className="install-modal-close"
+                            onClick={() => setFooterEditOpen(false)}
+                            aria-label="Yopish"
+                        >
+                            <X size={18} />
+                        </button>
+                        <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Edit3 size={18} /> Sayt va Aloqa Ma'lumotlarini O'zgartirish
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label>📞 Telefon raqam (Footer va Aloqada)</label>
+                                <input
+                                    className="input"
+                                    value={footerForm.contact_phone || ''}
+                                    onChange={(e) => setFooterForm(p => ({ ...p, contact_phone: e.target.value }))}
+                                    placeholder="+998 88 981 02 06"
+                                />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label>👨‍🏫 O'qituvchi / Muallif ismi</label>
+                                <input
+                                    className="input"
+                                    value={footerForm.teacher_name || ''}
+                                    onChange={(e) => setFooterForm(p => ({ ...p, teacher_name: e.target.value }))}
+                                    placeholder="Muhammaddiyor Orifjonov"
+                                />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label>🤖 Telegram Bot nomi</label>
+                                <input
+                                    className="input"
+                                    value={footerForm.bot_username || ''}
+                                    onChange={(e) => setFooterForm(p => ({ ...p, bot_username: e.target.value }))}
+                                    placeholder="@mdevsayt_bot"
+                                />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label>🏷 Platforma nomi</label>
+                                <input
+                                    className="input"
+                                    value={footerForm.platform_title || ''}
+                                    onChange={(e) => setFooterForm(p => ({ ...p, platform_title: e.target.value }))}
+                                    placeholder="MDev Platform"
+                                />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label>📝 Pastki qisqa tavsif (Footer tavsifi)</label>
+                                <input
+                                    className="input"
+                                    value={footerForm.footer_desc || ''}
+                                    onChange={(e) => setFooterForm(p => ({ ...p, footer_desc: e.target.value }))}
+                                />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label>© Mualliflik huquqi yozuvi (Copyright)</label>
+                                <input
+                                    className="input"
+                                    value={footerForm.copyright_text || ''}
+                                    onChange={(e) => setFooterForm(p => ({ ...p, copyright_text: e.target.value }))}
+                                />
+                            </div>
+                            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '0.25rem 0' }} />
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label>💳 To'lov karta raqami</label>
+                                <input
+                                    className="input"
+                                    value={footerForm.card_number || ''}
+                                    onChange={(e) => setFooterForm(p => ({ ...p, card_number: e.target.value }))}
+                                    placeholder="5614 6819 0511 2722"
+                                />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.5rem' }}>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label>👤 Karta egasi (F.I.SH)</label>
+                                    <input
+                                        className="input"
+                                        value={footerForm.card_holder || ''}
+                                        onChange={(e) => setFooterForm(p => ({ ...p, card_holder: e.target.value }))}
+                                    />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label>📅 Karta muddati</label>
+                                    <input
+                                        className="input"
+                                        value={footerForm.card_expiry || ''}
+                                        onChange={(e) => setFooterForm(p => ({ ...p, card_expiry: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="modal-actions" style={{ marginTop: '1.25rem' }}>
+                            <button type="button" className="btn btn-secondary" onClick={() => setFooterEditOpen(false)}>
+                                Bekor qilish
+                            </button>
+                            <button type="button" className="btn btn-primary" onClick={handleSaveFooterSettings} disabled={savingFooter}>
+                                {savingFooter ? <Loader size={16} className="spin" /> : <><Save size={16} /> Saqlash</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Install App Guide Modal */}
             {installGuideOpen && (
