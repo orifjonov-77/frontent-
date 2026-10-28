@@ -28,6 +28,301 @@ function Modal({ open, title, children, onClose }) {
     );
 }
 
+
+// ==================== DASHBOARD INTERACTIVE CHARTS ====================
+
+// 1. Monthly Revenue Area/Bar Chart
+function RevenueTimelineChart({ data = [], showPayments = true }) {
+    const [hoveredIdx, setHoveredIdx] = useState(null);
+    if (!data || data.length === 0) return <p className="empty-text">Ma'lumot topilmadi</p>;
+
+    const maxRev = Math.max(...data.map(d => d.revenue), 1000);
+    const chartHeight = 160;
+    const chartWidth = 500;
+    const paddingX = 40;
+    const paddingY = 24;
+
+    const points = data.map((d, i) => {
+        const x = paddingX + (i * (chartWidth - paddingX * 2)) / (data.length - 1 || 1);
+        const y = chartHeight - paddingY - (d.revenue / maxRev) * (chartHeight - paddingY * 2);
+        return { x, y, ...d };
+    });
+
+    const areaPath = `M ${points[0].x} ${chartHeight - paddingY} ` +
+        points.map(p => `L ${p.x} ${p.y}`).join(' ') +
+        ` L ${points[points.length - 1].x} ${chartHeight - paddingY} Z`;
+
+    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+    return (
+        <div className="chart-box">
+            <div className="chart-svg-wrap">
+                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="revenue-svg">
+                    <defs>
+                        <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.45" />
+                            <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.0" />
+                        </linearGradient>
+                    </defs>
+
+                    {/* Grid lines */}
+                    {[0, 0.5, 1].map((pct, idx) => {
+                        const y = chartHeight - paddingY - pct * (chartHeight - paddingY * 2);
+                        return (
+                            <g key={idx}>
+                                <line x1={paddingX} y1={y} x2={chartWidth - paddingX} y2={y} stroke="var(--border)" strokeDasharray="3 3" opacity="0.6" />
+                                <text x={paddingX - 6} y={y + 4} textAnchor="end" fontSize="10" fill="var(--text-muted)">
+                                    {showPayments ? `${Math.round((maxRev * pct) / 1000)}k` : '***'}
+                                </text>
+                            </g>
+                        );
+                    })}
+
+                    {/* Area under curve */}
+                    <path d={areaPath} fill="url(#revGrad)" />
+
+                    {/* Curve line */}
+                    <path d={linePath} fill="none" stroke="#4f46e5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+                    {/* Data Points */}
+                    {points.map((p, i) => (
+                        <g key={i} className="chart-point-group" onMouseEnter={() => setHoveredIdx(i)} onMouseLeave={() => setHoveredIdx(null)}>
+                            <circle cx={p.x} cy={p.y} r={hoveredIdx === i ? 6 : 4} fill={hoveredIdx === i ? '#4f46e5' : 'var(--bg-card)'} stroke="#4f46e5" strokeWidth="2" style={{ cursor: 'pointer', transition: 'all 0.2s ease' }} />
+                            {/* X-axis labels */}
+                            <text x={p.x} y={chartHeight - 6} textAnchor="middle" fontSize="11" fill="var(--text-muted)" fontWeight="600">
+                                {p.label}
+                            </text>
+                        </g>
+                    ))}
+                </svg>
+
+                {/* Tooltip */}
+                {hoveredIdx !== null && points[hoveredIdx] && (
+                    <div className="chart-tooltip animate-fade">
+                        <strong>{points[hoveredIdx].fullLabel}</strong>
+                        <div>Daromad: <span>{showPayments ? `${points[hoveredIdx].revenue.toLocaleString()} so'm` : '***'}</span></div>
+                        <small>{points[hoveredIdx].count} ta to'lov</small>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// 2. Module Revenue Donut Chart
+function ModuleDonutChart({ moduleStats = [], totalRevenue = 0, showPayments = true }) {
+    const [hoveredIdx, setHoveredIdx] = useState(null);
+    if (!moduleStats || moduleStats.length === 0) return <p className="empty-text">Hali to'lovlar yo'q</p>;
+
+    const palette = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+    const radius = 58;
+    const strokeWidth = 22;
+    const circumference = 2 * Math.PI * radius;
+
+    let accumulatedPct = 0;
+    const total = totalRevenue || moduleStats.reduce((s, m) => s + m.revenue, 0) || 1;
+
+    const segments = moduleStats.map((m, idx) => {
+        const pct = (m.revenue / total) * 100;
+        const strokeDasharray = `${(pct / 100) * circumference} ${circumference}`;
+        const strokeDashoffset = -((accumulatedPct / 100) * circumference);
+        accumulatedPct += pct;
+        return {
+            ...m,
+            pct: Math.round(pct),
+            color: palette[idx % palette.length],
+            strokeDasharray,
+            strokeDashoffset
+        };
+    });
+
+    const activeSeg = hoveredIdx !== null ? segments[hoveredIdx] : null;
+
+    return (
+        <div className="donut-chart-container">
+            <div className="donut-svg-wrap">
+                <svg viewBox="0 0 160 160" className="donut-svg">
+                    <circle cx="80" cy="80" r={radius} fill="none" stroke="var(--bg-input)" strokeWidth={strokeWidth} opacity="0.3" />
+                    {segments.map((s, idx) => (
+                        <circle
+                            key={s.name}
+                            cx="80"
+                            cy="80"
+                            r={radius}
+                            fill="none"
+                            stroke={s.color}
+                            strokeWidth={hoveredIdx === idx ? strokeWidth + 4 : strokeWidth}
+                            strokeDasharray={s.strokeDasharray}
+                            strokeDashoffset={s.strokeDashoffset}
+                            strokeLinecap="round"
+                            style={{
+                                cursor: 'pointer',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transform: 'rotate(-90deg)',
+                                transformOrigin: '50% 50%'
+                            }}
+                            onMouseEnter={() => setHoveredIdx(idx)}
+                            onMouseLeave={() => setHoveredIdx(null)}
+                        />
+                    ))}
+                </svg>
+                <div className="donut-center-info">
+                    {activeSeg ? (
+                        <>
+                            <span className="donut-center-val" style={{ color: activeSeg.color }}>{activeSeg.pct}%</span>
+                            <span className="donut-center-label">{activeSeg.name.slice(0, 14)}</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="donut-center-val">{segments.length}</span>
+                            <span className="donut-center-label">Modul</span>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            <div className="donut-legend">
+                {segments.map((s, idx) => (
+                    <div
+                        key={s.name}
+                        className={`donut-legend-item ${hoveredIdx === idx ? 'active' : ''}`}
+                        onMouseEnter={() => setHoveredIdx(idx)}
+                        onMouseLeave={() => setHoveredIdx(null)}
+                    >
+                        <span className="donut-legend-color" style={{ background: s.color }}></span>
+                        <div className="donut-legend-info">
+                            <div className="donut-legend-row">
+                                <span className="donut-legend-name">{s.name}</span>
+                                <span className="donut-legend-pct">{s.pct}%</span>
+                            </div>
+                            <small className="donut-legend-amount">
+                                {showPayments ? `${s.revenue.toLocaleString()} so'm` : '***'} ({s.count} ta)
+                            </small>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// 3. Payment Statuses Donut / Breakdown Chart
+function StatusBreakdownChart({ stats, showPayments = true }) {
+    if (!stats) return null;
+    const { approved = 0, pending = 0, rejected = 0, total = 0 } = stats;
+
+    const items = [
+        { key: 'approved', label: 'Tasdiqlangan', count: approved, color: '#10b981', icon: CheckCircle },
+        { key: 'pending', label: 'Kutilayotgan', count: pending, color: '#f59e0b', icon: Clock },
+        { key: 'rejected', label: 'Bekor qilingan', count: rejected, color: '#ef4444', icon: XCircle },
+    ];
+
+    return (
+        <div className="status-breakdown-card">
+            {/* Multi-segment progress bar */}
+            <div className="status-bar-track">
+                {items.map(it => {
+                    const pct = total > 0 ? (it.count / total) * 100 : 0;
+                    if (pct === 0) return null;
+                    return (
+                        <div
+                            key={it.key}
+                            className="status-bar-segment"
+                            style={{
+                                width: `${pct}%`,
+                                background: it.color
+                            }}
+                            title={`${it.label}: ${it.count} ta (${Math.round(pct)}%)`}
+                        />
+                    );
+                })}
+            </div>
+
+            <div className="status-badges-grid">
+                {items.map(it => {
+                    const Icon = it.icon;
+                    const pct = total > 0 ? Math.round((it.count / total) * 100) : 0;
+                    return (
+                        <div key={it.key} className="status-badge-item" style={{ borderLeft: `3px solid ${it.color}` }}>
+                            <div className="status-badge-header">
+                                <Icon size={14} style={{ color: it.color }} />
+                                <span>{it.label}</span>
+                            </div>
+                            <div className="status-badge-numbers">
+                                <strong>{showPayments ? it.count : '***'}</strong>
+                                <small>({pct}%)</small>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+// 4. Database Storage Circular Gauge Chart
+function DatabaseGaugeChart({ dbUsedMb = 16, dbMaxMb = 512, dbUsedPercent = 3.1, dbPretty = '16 MB' }) {
+    const radius = 42;
+    const circumference = 2 * Math.PI * radius;
+    // 240 degree arc gauge
+    const arcPercent = Math.min(Math.max(dbUsedPercent, 1), 100);
+    const gaugeStroke = (arcPercent / 100) * circumference * 0.75;
+    const remainingStroke = circumference * 0.75 - gaugeStroke;
+
+    const isHigh = dbUsedPercent > 80;
+    const color = isHigh ? '#ef4444' : dbUsedPercent > 50 ? '#f59e0b' : '#06b6d4';
+
+    return (
+        <div className="db-gauge-wrap">
+            <div className="db-gauge-svg-box">
+                <svg viewBox="0 0 100 100" className="db-gauge-svg">
+                    <circle
+                        cx="50"
+                        cy="50"
+                        r={radius}
+                        fill="none"
+                        stroke="var(--bg-input)"
+                        strokeWidth="8"
+                        strokeDasharray={`${circumference * 0.75} ${circumference * 0.25}`}
+                        strokeDashoffset={-circumference * 0.125}
+                        strokeLinecap="round"
+                    />
+                    <circle
+                        cx="50"
+                        cy="50"
+                        r={radius}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth="8"
+                        strokeDasharray={`${gaugeStroke} ${remainingStroke + circumference * 0.25}`}
+                        strokeDashoffset={-circumference * 0.125}
+                        strokeLinecap="round"
+                        style={{ transition: 'stroke-dasharray 1s ease' }}
+                    />
+                </svg>
+                <div className="db-gauge-val">
+                    <span className="db-gauge-num" style={{ color }}>{dbUsedPercent}%</span>
+                    <small>Band</small>
+                </div>
+            </div>
+            <div className="db-gauge-info">
+                <div className="db-gauge-stat">
+                    <span className="db-gauge-label">Ishlatildi:</span>
+                    <strong>{dbPretty || `${dbUsedMb} MB`}</strong>
+                </div>
+                <div className="db-gauge-stat">
+                    <span className="db-gauge-label">Chegara:</span>
+                    <span>{dbMaxMb} MB (Neon Free)</span>
+                </div>
+                <div className="db-gauge-stat">
+                    <span className="db-gauge-label">Qoldi:</span>
+                    <span style={{ color: '#10b981', fontWeight: 600 }}>{Math.max(dbMaxMb - dbUsedMb, 0)} MB</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function AdminPage() {
     const { user, isAdmin } = useAuth();
     const navigate = useNavigate();
@@ -202,7 +497,7 @@ export default function AdminPage() {
                     });
                     const totalRevenue = approved.reduce((s, p) => s + (p.amount || 0), 0);
                     const monthRevenue = monthPayments.reduce((s, p) => s + (p.amount || 0), 0);
-                    // Module profitability
+                    // Module profitability & stats calculation
                     const moduleMap = {};
                     approved.forEach(p => {
                         const name = p.module_name || 'Noma\'lum';
@@ -212,16 +507,53 @@ export default function AdminPage() {
                     });
                     const moduleStats = Object.values(moduleMap).sort((a, b) => b.revenue - a.revenue);
                     const maxRevenue = moduleStats.length > 0 ? moduleStats[0].revenue : 1;
+
+                    // Monthly timeline (last 6 months)
+                    const monthNames = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
+                    const monthlyTimeline = [];
+                    for (let i = 5; i >= 0; i--) {
+                        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                        const mIdx = d.getMonth();
+                        const y = d.getFullYear();
+                        const mPayments = approved.filter(p => {
+                            const pd = new Date(p.created_at);
+                            return pd.getMonth() === mIdx && pd.getFullYear() === y;
+                        });
+                        const rev = mPayments.reduce((s, p) => s + (p.amount || 0), 0);
+                        monthlyTimeline.push({
+                            label: monthNames[mIdx],
+                            fullLabel: `${monthNames[mIdx]} ${y}`,
+                            revenue: rev,
+                            count: mPayments.length
+                        });
+                    }
+
+                    // Payment status distribution
+                    const pendingCount = payments.filter(p => p.status === 'pending').length;
+                    const rejectedCount = payments.filter(p => p.status === 'rejected').length;
+                    const approvedCount = approved.length;
+                    const totalPaymentsCount = payments.length || 1;
+
                     setPaymentStats({
                         totalPayments: approved.length,
                         monthPayments: monthPayments.length,
                         totalRevenue,
                         monthRevenue,
-                        pendingCount: payments.filter(p => p.status === 'pending').length,
-                        rejectedCount: payments.filter(p => p.status === 'rejected').length,
+                        pendingCount,
+                        rejectedCount,
                         moduleStats,
                         maxRevenue,
-                        recentPayments: approved.slice(0, 6)
+                        recentPayments: approved.slice(0, 6),
+                        monthlyTimeline,
+                        statusStats: {
+                            approved: approvedCount,
+                            pending: pendingCount,
+                            rejected: rejectedCount,
+                            total: payments.length,
+                            approvedPct: Math.round((approvedCount / totalPaymentsCount) * 100),
+                            pendingPct: Math.round((pendingCount / totalPaymentsCount) * 100),
+                            rejectedPct: Math.round((rejectedCount / totalPaymentsCount) * 100)
+                        }
                     });
                     break;
                 }
@@ -719,104 +1051,116 @@ export default function AdminPage() {
                                     </div>
                                 </div>
 
-                                {/* Monthly Summary */}
+                                {/* Charts & Analytics Section */}
                                 {paymentStats && (
-                                    <div className="month-summary-row animate-fade">
-                                        <div className="month-card card">
-                                            <div className="month-card-header">
-                                                <Activity size={18} />
-                                                <span>Shu oy statistikasi</span>
+                                    <>
+                                        {/* Top Analytics Row: Revenue Timeline Chart + DB Gauge */}
+                                        <div className="dashboard-charts-main-row animate-fade">
+                                            {/* Revenue Timeline Curve Chart */}
+                                            <div className="chart-card card">
+                                                <div className="chart-card-header">
+                                                    <div className="chart-card-title">
+                                                        <Activity size={18} />
+                                                        <span>Daromad dinamikasi (Oxirgi oylar)</span>
+                                                    </div>
+                                                    <span className="chart-badge">Oylik statistika</span>
+                                                </div>
+                                                <RevenueTimelineChart data={paymentStats.monthlyTimeline} showPayments={showPayments} />
+                                                <div className="chart-footer-metrics">
+                                                    <div className="chart-metric-item">
+                                                        <span className="chart-metric-label">Shu oy daromadi:</span>
+                                                        <span className="chart-metric-val">{showPayments ? `${paymentStats.monthRevenue?.toLocaleString()} so'm` : '***'}</span>
+                                                    </div>
+                                                    <div className="chart-metric-item">
+                                                        <span className="chart-metric-label">Shu oy to'lovlari:</span>
+                                                        <span className="chart-metric-val">{showPayments ? `${paymentStats.monthPayments} ta` : '***'}</span>
+                                                    </div>
+                                                    <div className="chart-metric-item">
+                                                        <span className="chart-metric-label">Jami darslar:</span>
+                                                        <span className="chart-metric-val">{data.total_lessons} ta</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="month-stats-grid">
-                                                <div className="month-stat">
-                                                    <span className="month-stat-num">{showPayments ? paymentStats.monthPayments : '***'}</span>
-                                                    <span className="month-stat-label">To'lovlar soni</span>
-                                                </div>
-                                                <div className="month-stat-divider"></div>
-                                                <div className="month-stat">
-                                                    <span className="month-stat-num">{showPayments ? paymentStats.monthRevenue?.toLocaleString() : '***'}</span>
-                                                    <span className="month-stat-label">Daromad (so'm)</span>
-                                                </div>
-                                                <div className="month-stat-divider"></div>
-                                                <div className="month-stat">
-                                                    <span className="month-stat-num">{data.total_modules}</span>
-                                                    <span className="month-stat-label">Modullar</span>
-                                                </div>
-                                                <div className="month-stat-divider"></div>
-                                                <div className="month-stat">
-                                                    <span className="month-stat-num">{data.total_lessons}</span>
-                                                    <span className="month-stat-label">Darslar</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
 
-                                {/* Module Profitability + Recent Payments Row */}
-                                {paymentStats && (
-                                    <div className="dashboard-bottom-row">
-                                        {/* Module Profitability */}
-                                        <div className="module-profit-card card">
-                                            <div className="profit-header">
-                                                <BarChart3 size={18} />
-                                                <span>Modul daromadlari</span>
-                                            </div>
-                                            {paymentStats.moduleStats.length === 0 ? (
-                                                <p className="empty-text">Hali to'lovlar yo'q</p>
-                                            ) : (
-                                                <div className="profit-bars">
-                                                    {paymentStats.moduleStats.map((m, i) => (
-                                                        <div key={m.name} className="profit-bar-row" style={{ animationDelay: `${i * 0.1}s` }}>
-                                                            <div className="profit-bar-label">
-                                                                <span className="profit-bar-name">{m.name}</span>
-                                                                <span className="profit-bar-amount">{m.revenue?.toLocaleString()} so'm</span>
-                                                            </div>
-                                                            <div className="profit-bar-track">
-                                                                <div
-                                                                    className="profit-bar-fill"
-                                                                    data-percent={`${Math.round((m.revenue / paymentStats.maxRevenue) * 100)}%`}
-                                                                    style={{
-                                                                        '--target-width': `${Math.max((m.revenue / paymentStats.maxRevenue) * 100, 8)}%`,
-                                                                        animationDelay: `${0.3 + i * 0.15}s`
-                                                                    }}
-                                                                ></div>
-                                                            </div>
-                                                            <span className="profit-bar-count">{m.count} ta to'lov</span>
-                                                        </div>
-                                                    ))}
+                                            {/* Database & System Storage Gauge Card */}
+                                            <div className="chart-card card db-gauge-card">
+                                                <div className="chart-card-header">
+                                                    <div className="chart-card-title">
+                                                        <Database size={18} />
+                                                        <span>Baza sig'imi (Neon PostgreSQL)</span>
+                                                    </div>
+                                                    <span className="chart-badge db-badge">Jonli hisobot</span>
                                                 </div>
-                                            )}
+                                                <DatabaseGaugeChart
+                                                    dbUsedMb={data.db_size_mb || 16}
+                                                    dbMaxMb={data.db_max_limit_mb || 512}
+                                                    dbUsedPercent={data.db_used_percent ?? 3.1}
+                                                    dbPretty={data.db_size_pretty || '16 MB'}
+                                                />
+                                            </div>
                                         </div>
 
-                                        {/* Recent Payments */}
-                                        <div className="recent-payments-card card">
-                                            <div className="profit-header">
-                                                <TrendingUp size={18} />
-                                                <span>Oxirgi to'lovlar</span>
-                                            </div>
-                                            {paymentStats.recentPayments.length === 0 ? (
-                                                <p className="empty-text">Hali to'lovlar yo'q</p>
-                                            ) : (
-                                                <div className="recent-list">
-                                                    {paymentStats.recentPayments.map((p, i) => (
-                                                        <div key={p.id} className="recent-item" style={{ animationDelay: `${i * 0.08}s` }}>
-                                                            <div className="recent-item-avatar">
-                                                                {p.user_name?.charAt(0)?.toUpperCase() || '?'}
-                                                            </div>
-                                                            <div className="recent-item-info">
-                                                                <span className="recent-item-name">{p.user_name}</span>
-                                                                <span className="recent-item-module">{p.module_name}</span>
-                                                            </div>
-                                                            <div className="recent-item-amount">
-                                                                <span className="recent-amount-value">+{p.amount?.toLocaleString()}</span>
-                                                                <span className="recent-amount-date">{p.created_at?.slice(0, 10)}</span>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                        {/* Middle Analytics Row: Module Revenue Donut Chart + Payment Statuses */}
+                                        <div className="dashboard-charts-secondary-row animate-fade">
+                                            {/* Module Revenue Donut Chart */}
+                                            <div className="chart-card card">
+                                                <div className="chart-card-header">
+                                                    <div className="chart-card-title">
+                                                        <BarChart3 size={18} />
+                                                        <span>Modul bo'yicha daromad ulushi (Donut Chart)</span>
+                                                    </div>
                                                 </div>
-                                            )}
+                                                <ModuleDonutChart
+                                                    moduleStats={paymentStats.moduleStats}
+                                                    totalRevenue={paymentStats.totalRevenue}
+                                                    showPayments={showPayments}
+                                                />
+                                            </div>
+
+                                            {/* Payment Statuses Breakdown Card */}
+                                            <div className="chart-card card">
+                                                <div className="chart-card-header">
+                                                    <div className="chart-card-title">
+                                                        <CreditCard size={18} />
+                                                        <span>To'lovlar holati taqsimoti</span>
+                                                    </div>
+                                                </div>
+                                                <StatusBreakdownChart
+                                                    stats={paymentStats.statusStats}
+                                                    showPayments={showPayments}
+                                                />
+
+                                                {/* Recent Payments Quick List */}
+                                                <div className="recent-payments-mini-section">
+                                                    <div className="profit-header" style={{ marginTop: '1.25rem', marginBottom: '0.75rem' }}>
+                                                        <TrendingUp size={16} />
+                                                        <span style={{ fontSize: '0.85rem' }}>Oxirgi tasdiqlangan to'lovlar</span>
+                                                    </div>
+                                                    {paymentStats.recentPayments.length === 0 ? (
+                                                        <p className="empty-text">Hali to'lovlar yo'q</p>
+                                                    ) : (
+                                                        <div className="recent-list">
+                                                            {paymentStats.recentPayments.slice(0, 4).map((p, i) => (
+                                                                <div key={p.id} className="recent-item" style={{ animationDelay: `${i * 0.08}s` }}>
+                                                                    <div className="recent-item-avatar">
+                                                                        {p.user_name?.charAt(0)?.toUpperCase() || '?'}
+                                                                    </div>
+                                                                    <div className="recent-item-info">
+                                                                        <span className="recent-item-name">{p.user_name}</span>
+                                                                        <span className="recent-item-module">{p.module_name}</span>
+                                                                    </div>
+                                                                    <div className="recent-item-amount">
+                                                                        <span className="recent-amount-value">+{showPayments ? p.amount?.toLocaleString() : '***'}</span>
+                                                                        <span className="recent-amount-date">{p.created_at?.slice(0, 10)}</span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    </>
                                 )}
                             </div>
                         )}

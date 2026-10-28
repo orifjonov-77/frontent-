@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mdev-v8';
+const CACHE_NAME = 'mdev-v9';
 const STATIC_ASSETS = [
     '/',
     '/logo.png',
