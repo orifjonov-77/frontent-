@@ -6,7 +6,7 @@ import { useLang } from '../context/LangContext';
 import { adminAPI } from '../api/client';
 import {
     Home, BookOpen, Trophy, User, Shield,
-    Sun, Moon, Menu, X, LogOut, LogIn, FileText, Globe, Award, Download, Smartphone, Monitor, CheckCircle, Edit3, Save, Loader
+    Sun, Moon, Menu, X, LogOut, LogIn, FileText, Globe, Award, Download, Smartphone, Monitor, CheckCircle, Edit3, Save, Loader, HelpCircle
 } from 'lucide-react';
 import myLogo from '../assets/mylogo.png';
 import AnimatedBackground from './AnimatedBackground';
@@ -21,6 +21,7 @@ export default function Layout() {
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [isInstalled, setIsInstalled] = useState(false);
     const [installGuideOpen, setInstallGuideOpen] = useState(false);
+    const [showManualGuide, setShowManualGuide] = useState(false);
     const [siteSettings, setSiteSettings] = useState({
         platform_title: 'MDev Platform',
         footer_desc: "Online ta'lim platformasi — Professional IT ko'nikmalar",
@@ -81,6 +82,7 @@ export default function Layout() {
         const handleBeforeInstallPrompt = (e) => {
             e.preventDefault();
             setDeferredPrompt(e);
+            window.deferredPWAEvent = e;
         };
 
         const handleAppInstalled = () => {
@@ -97,21 +99,32 @@ export default function Layout() {
         };
     }, []);
 
-    const handleDownloadApp = async () => {
-        if (deferredPrompt) {
+    const handleDownloadApp = () => {
+        // Avval tasdiqlash oynasini ochamiz ("Yuklab olasizmi? Ha / Yo'q")
+        setShowManualGuide(false);
+        setInstallGuideOpen(true);
+    };
+
+    const handleConfirmInstall = async () => {
+        // Foydalanuvchi "Ha, yuklab olish" tugmasini bosganda:
+        const promptEvent = deferredPrompt || window.deferredPWAEvent;
+        if (promptEvent) {
             try {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
+                promptEvent.prompt();
+                const { outcome } = await promptEvent.userChoice;
                 if (outcome === 'accepted') {
                     setDeferredPrompt(null);
+                    window.deferredPWAEvent = null;
                     setIsInstalled(true);
+                    setInstallGuideOpen(false);
+                    return;
                 }
-            } catch {
-                setInstallGuideOpen(true);
+            } catch (err) {
+                console.log("Install prompt error:", err);
             }
-        } else {
-            setInstallGuideOpen(true);
         }
+        // Agar brauzer nativ oynasi chiqmasa, qo'llanmani ko'rsatamiz
+        setShowManualGuide(true);
     };
 
     // Close menu on route change
@@ -493,7 +506,7 @@ export default function Layout() {
                 </div>
             )}
 
-            {/* Install App Guide Modal */}
+            {/* Install App Confirm & Download Modal */}
             {installGuideOpen && (
                 <div className="modal-overlay" onClick={() => setInstallGuideOpen(false)}>
                     <div className="modal-content install-modal-box" onClick={(e) => e.stopPropagation()}>
@@ -508,56 +521,84 @@ export default function Layout() {
                         <div className="install-modal-header">
                             <img src={myLogo} alt="MDev" className="install-modal-logo" />
                             <div>
-                                <h3>📲 MDev Ilovasini Yuklab Olish</h3>
-                                <p>Saytni telefon yoki kompyuteringizga ilova sifatida o'rnating!</p>
+                                <h3>📲 MDev ilovasini yuklab olasizmi?</h3>
+                                <p>Platformani telefon yoki kompyuteringizga tezkor ilova sifatida o'rnating!</p>
                             </div>
                         </div>
 
-                        <div className="install-steps-grid">
-                            <div className="install-step-card">
-                                <div className="install-step-title">
-                                    <Smartphone size={18} />
-                                    <strong>Android / Samsung / Xiaomi</strong>
-                                </div>
-                                <ol>
-                                    <li>Brauzerning o'ng tepa burchagidagi <strong>⋮ (3 nuqta)</strong> tugmasini bosing.</li>
-                                    <li><strong>«Ilovani o'rnatish»</strong> (<em>Установить приложение</em> / <em>Add to Home screen</em>) ni tanlang.</li>
-                                </ol>
-                            </div>
-
-                            <div className="install-step-card">
-                                <div className="install-step-title">
-                                    <Smartphone size={18} />
-                                    <strong>iPhone / iPad (Safari)</strong>
-                                </div>
-                                <ol>
-                                    <li>Pastdagi <strong>Ulashish (Share ⬆️)</strong> tugmasini bosing.</li>
-                                    <li>Ro'yxatdan <strong>«Asosiy ekranga qo'shish»</strong> (<em>На экран «Домой»</em> / <em>Add to Home Screen</em>) ni bosing.</li>
-                                </ol>
-                            </div>
-
-                            <div className="install-step-card">
-                                <div className="install-step-title">
-                                    <Monitor size={18} />
-                                    <strong>Kompyuter / Noutbuk (Chrome / Edge)</strong>
-                                </div>
-                                <ol>
-                                    <li>Manzil qatori (URL) o'ng tomonidagi <strong>📥 O'rnatish (Install MDev)</strong> belgisini bosing.</li>
-                                    <li>Tasdiqlash oynasida <strong>«O'rnatish» (Install)</strong> tugmasini bosing.</li>
-                                </ol>
+                        {/* Confirmation Banner */}
+                        <div className="install-confirm-banner">
+                            <p className="install-confirm-question">
+                                <strong>MDev ilovasini qurilmangizga yuklab olmoqchimisiz?</strong>
+                            </p>
+                            <p className="install-confirm-desc">
+                                Ilova orqali sayt tezroq ishlaydi, internet kam sarflanadi va brauzersiz bir klikda ochiladi.
+                            </p>
+                            
+                            <div className="install-confirm-buttons">
+                                <button
+                                    type="button"
+                                    className="btn btn-primary btn-lg install-btn-yes"
+                                    onClick={handleConfirmInstall}
+                                >
+                                    <Download size={18} /> <span>Ha, yuklab olish</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-lg install-btn-no"
+                                    onClick={() => setInstallGuideOpen(false)}
+                                >
+                                    <X size={18} /> <span>Yo'q</span>
+                                </button>
                             </div>
                         </div>
 
-                        <div className="modal-actions" style={{ marginTop: '1.25rem' }}>
-                            <button
-                                type="button"
-                                className="btn btn-primary"
-                                style={{ width: '100%' }}
-                                onClick={() => setInstallGuideOpen(false)}
-                            >
-                                <CheckCircle size={16} /> Tushunarli
-                            </button>
-                        </div>
+                        {!showManualGuide ? (
+                            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                                <button
+                                    type="button"
+                                    className="btn-link-help"
+                                    onClick={() => setShowManualGuide(true)}
+                                >
+                                    <HelpCircle size={14} /> Qo'lda o'rnatish yo'riqnomasi kerakmi?
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="install-steps-grid animate-fade" style={{ marginTop: '1rem' }}>
+                                <div className="install-step-card">
+                                    <div className="install-step-title">
+                                        <Smartphone size={18} />
+                                        <strong>Android / Samsung / Xiaomi</strong>
+                                    </div>
+                                    <ol>
+                                        <li>Brauzerning o'ng tepa burchagidagi <strong>⋮ (3 nuqta)</strong> tugmasini bosing.</li>
+                                        <li><strong>«Ilovani o'rnatish»</strong> (<em>Установить приложение</em> / <em>Add to Home screen</em>) ni tanlang.</li>
+                                    </ol>
+                                </div>
+
+                                <div className="install-step-card">
+                                    <div className="install-step-title">
+                                        <Smartphone size={18} />
+                                        <strong>iPhone / iPad (Safari)</strong>
+                                    </div>
+                                    <ol>
+                                        <li>Pastdagi <strong>Ulashish (Share ⬆️)</strong> tugmasini bosing.</li>
+                                        <li>Ro'yxatdan <strong>«Asosiy ekranga qo'shish»</strong> (<em>На экран «Домой»</em> / <em>Add to Home Screen</em>) ni bosing.</li>
+                                    </ol>
+                                </div>
+
+                                <div className="install-step-card">
+                                    <div className="install-step-title">
+                                        <Monitor size={18} />
+                                        <strong>Kompyuter / Noutbuk (Chrome / Edge)</strong>
+                                    </div>
+                                    <ol>
+                                        <li>Manzil qatori (URL) o'ng tomonidagi <strong>📥 O'rnatish (Install MDev)</strong> belgisini bosing.</li>
+                                        <li>Tasdiqlash oynasida <strong>«O'rnatish» (Install)</strong> tugmasini bosing.</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
